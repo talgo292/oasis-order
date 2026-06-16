@@ -33,6 +33,20 @@
                 進入點餐介面
             </button>
         </div>
+
+        <div id="history-card" class="hidden mt-4 p-5 bg-stone-950 text-stone-100 rounded-xl shadow-sm border border-stone-800">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-bold tracking-wider text-amber-400">📋 您的最新預訂紀錄</h3>
+                <button onclick="clearHistory()" class="text-[10px] text-stone-400 hover:text-stone-200 underline">清除紀錄</button>
+            </div>
+            <div class="text-xs space-y-2 text-stone-300">
+                <p><strong>預訂商店：</strong> <span id="hist-brand"></span></p>
+                <p><strong>取餐時間：</strong> <span id="hist-time"></span></p>
+                <p><strong>餐點內容：</strong> <span id="hist-content" class="block bg-stone-900 p-2 rounded mt-1 text-stone-200 break-all"></span></p>
+                <p class="text-right text-stone-400 font-medium">應付總額：<span id="hist-total" class="text-sm font-bold text-emerald-400"></span> 元</p>
+            </div>
+            <p class="text-[10px] text-stone-500 mt-3 text-center border-t border-stone-800 pt-2">⚠️ 現場付款時請主動出示問卷完成畫面折抵 10 元</p>
+        </div>
     </div>
 
     <div id="order-stage" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -93,7 +107,7 @@
     </div>
 
     <script>
-        // 廠商與菜單資料庫
+        // 廠商與菜單資料庫（完美對齊根目錄圖片結構）
         const brands = [
             {
                 id: "yu-tian",
@@ -101,7 +115,7 @@
                 desc: "🤠類德州燒烤 Tex-ish BBQ｜😋臺東風味 Taitung Flavor｜❤️‍🔥偏移式煙燻爐 Offset Smoker",
                 ig: "https://www.instagram.com/956leissmoker/", 
                 fb: "https://www.facebook.com/profile.php?id=100090128882932&locale=zh_TW",
-                imgUrl: "yu-tian.jpg", // 👈 請放上雨田燻的 LOGO 或招牌美照路徑
+                imgUrl: "yu-tian.jpg", 
                 canCustomize: false,
                 menu: [
                     { name: "牛頰肉 Beef Cheek", price: 350 },
@@ -115,7 +129,7 @@
                 desc: "Neapolitan Pizza on Wheels • Taitung",
                 ig: "https://www.instagram.com/tothepizza/", 
                 fb: "https://www.facebook.com/tothepizza?locale=zh_TW",
-                imgUrl: "to-the-pizza.jpg", // 👈 請放上來去披薩的 LOGO 或招牌美照路徑
+                imgUrl: "to-the-pizza.jpg", 
                 canCustomize: true,
                 customOptions: [
                     { name: "洋蔥", price: 20 },
@@ -137,7 +151,7 @@
         const canvas = document.getElementById('brandCanvas');
         const ctx = canvas.getContext('2d');
 
-        // ✨ 升級：建置圖片資源與預載入機制
+        // 建立圖片監聽，非同步載入完畢即立刻驅動 Canvas 局部重繪
         const brandImages = {};
         let loadedCount = 0;
 
@@ -146,8 +160,267 @@
             brandImages[b.id].src = b.imgUrl;
             brandImages[b.id].onload = () => {
                 loadedCount++;
-                if (loadedCount === brands.length) {
-                    drawCanvas(); // 所有圖片載入完畢後繪製 Canvas
-                }
+                drawCanvas(); 
             };
-            // 防呆：如果圖片沒讀
+            brandImages[b.id].onerror = () => {
+                loadedCount++;
+                drawCanvas();
+            };
+        });
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBrandButton(brands[0], 90, 90);
+            drawBrandButton(brands[1], 270, 90);
+        }
+
+        function drawBrandButton(brand, cx, cy) {
+            const radius = 55;
+            const isSelected = selectedBrand?.id === brand.id;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+            ctx.fillStyle = isSelected ? '#111827' : 'transparent';
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.clip();
+
+            const img = brandImages[brand.id];
+            if (img && img.complete && img.naturalWidth !== 0) {
+                ctx.drawImage(img, cx - radius, cy - radius, radius * 2, radius * 2);
+                ctx.fillStyle = isSelected ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.2)';
+                ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
+            } else {
+                ctx.fillStyle = isSelected ? '#111827' : '#E5E7EB';
+                ctx.fill();
+            }
+            ctx.restore();
+
+            const hasImg = (img && img.complete && img.naturalWidth !== 0);
+            ctx.fillStyle = hasImg ? '#FFFFFF' : (isSelected ? '#FFFFFF' : '#374151');
+            ctx.font = 'bold 15px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            if (brand.name.includes(" ")) {
+                let parts = brand.name.split(" ");
+                ctx.fillText(parts[0], cx, cy - 10);
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText(brand.name.replace(parts[0]+" ", ""), cx, cy + 12);
+            } else {
+                ctx.fillText(brand.name, cx, cy);
+            }
+        }
+
+        // 點擊 Canvas 觸發
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left; 
+            const y = event.clientY - rect.top;
+            if (Math.sqrt((x-90)**2 + (y-90)**2) < 55) { showBrandCard(brands[0]); } 
+            else if (Math.sqrt((x-270)**2 + (y-90)**2) < 55) { showBrandCard(brands[1]); }
+        });
+
+        // 動態注入核心：同步修正 IG / FB 的 href 失效問題
+        function showBrandCard(brand) {
+            selectedBrand = brand; 
+            drawCanvas();
+            document.getElementById('brand-card').classList.remove('hidden');
+            document.getElementById('card-title').innerText = brand.name;
+            document.getElementById('card-desc').innerText = brand.desc;
+            
+            document.getElementById('link-ig').href = brand.ig;
+            document.getElementById('link-fb').href = brand.fb;
+        }
+
+        // 點擊按鈕生成點餐品項
+        document.getElementById('go-order-btn').addEventListener('click', function() {
+            document.getElementById('entrance-stage').classList.add('hidden');
+            document.getElementById('order-stage').classList.remove('hidden');
+            document.getElementById('order-target').innerText = "預訂目標商店：" + selectedBrand.name;
+            
+            const menuContainer = document.getElementById('menu_list_container');
+            menuContainer.innerHTML = "";
+            
+            selectedBrand.menu.forEach((item, index) => {
+                let itemDiv = document.createElement('div');
+                itemDiv.className = "menu-item flex flex-col py-3";
+                
+                let topRow = document.createElement('div');
+                topRow.className = "flex justify-between items-center w-full";
+                topRow.innerHTML = `
+                    <div>
+                        <span class="font-medium text-gray-800">${item.name}</span>
+                        <span class="text-xs text-emerald-600 block">$${item.price} 元</span>
+                    </div>
+                    <select name="qty_${index}" onchange="togglePizzaOptions(${index}, this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white focus:border-black">
+                        <option value="0">0 (未點)</option>
+                        <option value="1">1份</option>
+                        <option value="2">2份</option>
+                        <option value="3">3份</option>
+                        <option value="4">4份</option>
+                        <option value="5">5份</option>
+                    </select>
+                `;
+                itemDiv.appendChild(topRow);
+                
+                if (selectedBrand.canCustomize) {
+                    let optDiv = document.createElement('div');
+                    optDiv.id = `pizza_opt_box_${index}`;
+                    optDiv.className = "hidden mt-3 p-2.5 bg-gray-50 rounded-lg text-xs space-y-2 text-gray-500 border border-gray-100";
+                    optDiv.innerHTML = `<p class="font-semibold text-gray-700">↳ 客製化加料 (可多選，費用以單份累計)：</p>`;
+                    
+                    selectedBrand.customOptions.forEach((opt, optIdx) => {
+                        optDiv.innerHTML += `
+                            <label class="flex items-center space-x-2 mt-1 cursor-pointer">
+                                <input type="checkbox" name="opt_${index}_${optIdx}" value="${opt.name}" data-price="${opt.price}" class="rounded text-black focus:ring-black">
+                                <span>+ ${opt.name} (+$${opt.price}元)</span>
+                            </label>
+                        `;
+                    });
+                    itemDiv.appendChild(optDiv);
+                }
+                menuContainer.appendChild(itemDiv);
+            });
+        });
+
+        function togglePizzaOptions(index, qty) {
+            const optBox = document.getElementById(`pizza_opt_box_${index}`);
+            if (optBox) {
+                if (parseInt(qty) > 0) {
+                    optBox.classList.remove('hidden');
+                } else {
+                    optBox.classList.add('hidden');
+                    const checkboxes = optBox.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => cb.checked = false);
+                }
+            }
+        }
+
+        function backToEntrance() {
+            document.getElementById('order-stage').classList.add('hidden');
+            document.getElementById('entrance-stage').classList.remove('hidden');
+        }
+
+        // 🌟 核心：顧客預訂紀錄快取控制邏輯
+        function checkOrderHistory() {
+            const localData = localStorage.getItem('nx_space_last_order');
+            const historyCard = document.getElementById('history-card');
+            if (localData && historyCard) {
+                try {
+                    const order = JSON.parse(localData);
+                    historyCard.classList.remove('hidden');
+                    document.getElementById('hist-brand').innerText = order.brand;
+                    document.getElementById('hist-time').innerText = `${order.date} ${order.time}`;
+                    document.getElementById('hist-content').innerText = order.order_content;
+                    document.getElementById('hist-total').innerText = order.total;
+                } catch (e) {
+                    console.error("預讀紀錄失敗", e);
+                }
+            } else if (historyCard) {
+                historyCard.classList.add('hidden');
+            }
+        }
+
+        function clearHistory() {
+            if (confirm("確定要清除手機上的本次點餐紀錄嗎？（不影響後台已收到的訂單）")) {
+                localStorage.removeItem('nx_space_last_order');
+                checkOrderHistory();
+            }
+        }
+
+        // 初始化渲染
+        drawCanvas();
+        checkOrderHistory();
+
+        // 預訂單送出事件
+        document.getElementById('menuForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let finalOrderItems = [];
+            let totalAmount = 0;
+
+            selectedBrand.menu.forEach((item, index) => {
+                const qtySelect = document.querySelector(`select[name="qty_${index}"]`);
+                const qty = parseInt(qtySelect.value);
+                
+                if (qty > 0) {
+                    let itemDescription = `${item.name} x ${qty}`;
+                    let itemPriceSum = item.price * qty;
+                    let addedOptions = [];
+
+                    if (selectedBrand.canCustomize) {
+                        selectedBrand.customOptions.forEach((opt, optIdx) => {
+                            const cb = document.querySelector(`input[name="opt_${index}_${optIdx}"]`);
+                            if (cb && cb.checked) {
+                                addedOptions.push(opt.name);
+                                itemPriceSum += (opt.price * qty);
+                            }
+                        });
+                    }
+
+                    if (addedOptions.length > 0) {
+                        itemDescription += ` [加料: ${addedOptions.join('+')}]`;
+                    } else if (selectedBrand.canCustomize) {
+                        itemDescription += ` [原味無加料]`;
+                    }
+
+                    finalOrderItems.push(itemDescription);
+                    totalAmount += itemPriceSum;
+                }
+            });
+
+            if (finalOrderItems.length === 0) {
+                alert("❌ 請至少選擇一項餐點再送出！");
+                return;
+            }
+
+            const orderData = {
+                brand: selectedBrand.name,
+                name: document.getElementById('cust_name').value,
+                phone: document.getElementById('cust_phone').value,
+                date: document.getElementById('pickup_date').value,
+                time: document.getElementById('pickup_time').value,
+                order_content: finalOrderItems.join(' ｜ '),
+                total: totalAmount,
+                note: document.getElementById('order_note').value || "無"
+            };
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "訂單傳送中...";
+
+            const gas_url = "https://script.google.com/macros/s/AKfycbz2OSGlYoUryM6Ql3jjR1pakFDpWm0PwqsAIpo59liFFZa-6HlHuQHpF4XLXvXoNBpz/exec";
+
+            fetch(gas_url, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(() => {
+                // 🌟 當次點餐成功，寫入快取，供顧客之後重複回來看
+                localStorage.setItem('nx_space_last_order', JSON.stringify(orderData));
+                
+                alert(`🎉 預訂成功！\n\n您的取餐時間：${orderData.date} ${orderData.time}\n餐點已同步至 ${orderData.brand} 後台。\n\n應付總金額：$${orderData.total} 元\n\n⚠️ 提醒：現場付款時主動出示問卷填寫完成畫面，可享現場現折 10 元優惠！`);
+                document.getElementById('menuForm').reset();
+                backToEntrance();
+                checkOrderHistory(); // 重新整理首頁小卡
+            })
+            .catch(err => {
+                alert("❌ 系統忙碌中，請直接洽詢現場工作人員。");
+                console.error(err);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "送出預訂單";
+            });
+        });
+    </script>
+</body>
+</html>
