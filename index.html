@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NX SPACE 綠洲點餐系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f8f9fa; font-family: sans-serif; }
+        canvas { background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .menu-item { border-bottom: 1px solid #f3f4f6; padding: 14px 0; }
+    </style>
+</head>
+<body class="p-4 max-w-md mx-auto">
+
+    <div class="text-center my-6">
+        <h1 class="text-2xl font-bold tracking-wider text-gray-800">NX SPACE</h1>
+        <p class="text-xs text-gray-500 mt-1">OASIS PROJECT / 綠洲預點系統</p>
+    </div>
+
+    <div id="entrance-stage" class="block">
+        <p class="text-sm text-gray-600 mb-2 text-center">請點擊下方品牌圖示查看介紹：</p>
+        <canvas id="brandCanvas" width="360" height="160" class="mx-auto touch-none"></canvas>
+        
+        <div id="brand-card" class="hidden mt-4 p-5 bg-white rounded-xl shadow-sm border border-gray-100">
+            <h2 id="card-title" class="text-xl font-bold text-gray-800"></h2>
+            <p id="card-desc" class="text-sm text-gray-600 my-3 leading-relaxed"></p>
+            <div class="flex space-x-4 mb-4 text-xs text-blue-600 font-medium">
+                <a id="link-ig" href="#" target="_blank">📸 Instagram</a>
+                <a id="link-fb" href="#" target="_blank">🔗 粉絲專頁</a>
+            </div>
+            <button id="go-order-btn" class="w-full bg-black text-white text-sm py-3 rounded-lg font-medium tracking-wide hover:bg-gray-800 transition">
+                進入點餐介面
+            </button>
+        </div>
+    </div>
+
+    <div id="order-stage" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <button onclick="backToEntrance()" class="text-xs text-gray-400 mb-4 flex items-center">← 返回品牌選擇</button>
+        <h2 id="order-target" class="text-lg font-bold text-gray-800 mb-2"></h2>
+        
+        <div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 rounded-lg mb-5 leading-relaxed">
+            💡 <strong>好康提醒：</strong> 現場支付時，主動出示「填寫問卷完成畫面」，本筆訂單現場現折 <strong>10 元</strong>！<br>
+            👉 <a href="https://forms.gle/DVZDLhrW97Hq3XSj8" target="_blank" class="text-emerald-700 font-bold underline hover:text-emerald-900">點此立即填寫問卷</a>
+        </div>
+
+        <form id="menuForm" class="space-y-4 text-sm">
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">取餐人姓名</label>
+                <input type="text" id="cust_name" required class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">聯絡電話</label>
+                <input type="tel" id="cust_phone" required class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">取餐日期</label>
+                    <select id="pickup_date" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black">
+                        <option value="" disabled selected>請選擇日期</option>
+                        <option value="6/19 (五)">6/19 (五)</option>
+                        <option value="6/20 (六)">6/20 (六)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">取餐時間</label>
+                    <select id="pickup_time" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black">
+                        <option value="" disabled selected>請選擇時間</option>
+                        <option value="17:30">17:30</option>
+                        <option value="18:00">18:00</option>
+                        <option value="18:30">18:30</option>
+                        <option value="19:00">19:00</option>
+                        <option value="19:30">19:30</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="border-t border-b border-gray-100 py-4 my-4">
+                <p class="font-bold text-gray-800 mb-3 text-base">🍽️ 線上菜單（可多選）</p>
+                <div id="menu_list_container" class="space-y-1">
+                    </div>
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">備註說明 (選填)</label>
+                <input type="text" id="order_note" placeholder="例如：披薩不要辣粉" class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
+            </div>
+            
+            <button type="submit" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition mt-6">
+                送出預訂單
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // 廠商與菜單資料庫
+        const brands = [
+            {
+                id: "yu-tian",
+                name: "雨田燻",
+                desc: "專注於職人風乾與獨家木屑慢火燻製料理。為您帶來層次豐富、香氣濃郁的台東在地美學輕食體驗。",
+                ig: "https://instagram.com/", fb: "https://facebook.com/",
+                canCustomize: false,
+                menu: [
+                    { name: "牛頰肉 Beef Cheek", price: 350 },
+                    { name: "牛胸腹 Beef Short Plate", price: 400 },
+                    { name: "手撕豬 Pulled Pork", price: 300 }
+                ]
+            },
+            {
+                id: "to-the-pizza",
+                name: "TO THE PIZZA 來去披薩",
+                desc: "現場手工現擀餅皮、搭配精選義式風味配料。高溫現烤外酥內軟，咬下的每一口都是滿滿的幸福滋味！",
+                ig: "https://instagram.com/", fb: "https://facebook.com/",
+                canCustomize: true,
+                customOptions: [
+                    { name: "洋蔥", price: 20 },
+                    { name: "起司", price: 30 },
+                    { name: "黑橄欖", price: 20 }
+                ],
+                menu: [
+                    { name: "馬利那拉 (五辛素)", price: 250 },
+                    { name: "瑪格麗特 (奶素)", price: 280 },
+                    { name: "蒜香白披薩 (五辛素)", price: 280 },
+                    { name: "迷迭香馬鈴薯 (奶素)", price: 300 },
+                    { name: "檸檬櫛瓜 (奶素)", price: 320 },
+                    { name: "義式臘腸", price: 360 }
+                ]
+            }
+        ];
+
+        let selectedBrand = null;
+        const canvas = document.getElementById('brandCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 繪製 Canvas 頂部兩個大品牌圓鈕
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 左圓：雨田燻
+            ctx.beginPath(); ctx.arc(90, 80, 55, 0, Math.PI * 2);
+            ctx.fillStyle = selectedBrand?.id === 'yu-tian' ? '#111827' : '#E5E7EB'; ctx.fill();
+            ctx.fillStyle = selectedBrand?.id === 'yu-tian' ? '#FFFFFF' : '#374151';
+            ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('雨田燻', 90, 85);
+
+            // 右圓：PIZZA
+            ctx.beginPath(); ctx.arc(270, 80, 55, 0, Math.PI * 2);
+            ctx.fillStyle = selectedBrand?.id === 'to-the-pizza' ? '#111827' : '#E5E7EB'; ctx.fill();
+            ctx.fillStyle = selectedBrand?.id === 'to-the-pizza' ? '#FFFFFF' : '#374151';
+            ctx.fillText('PIZZA', 270, 85);
+        }
+
+        // 點擊 Canvas 圓鈕觸發事件
+        canvas.addEventListener('click', function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left; const y = event.clientY - rect.top;
+            if (Math.sqrt((x-90)**2 + (y-80)**2) < 55) { showBrandCard(brands[0]); } 
+            else if (Math.sqrt((x-270)**2 + (y-80)**2) < 55) { showBrandCard(brands[1]); }
+        });
+
+        function showBrandCard(brand) {
+            selectedBrand = brand; drawCanvas();
+            document.getElementById('brand-card').classList.remove('hidden');
+            document.getElementById('card-title').innerText = brand.name;
+            document.getElementById('card-desc').innerText = brand.desc;
+        }
+
+        // 點擊黑按鈕跳轉至點餐區
+        document.getElementById('go-order-btn').addEventListener('click', function() {
+            document.getElementById('entrance-stage').classList.add('hidden');
+            document.getElementById('order-stage').classList.remove('hidden');
+            document.getElementById('order-target').innerText = "預訂目標商店：" + selectedBrand.name;
+            
+            const menuContainer = document.getElementById('menu_list_container');
+            menuContainer.innerHTML = "";
+            
+            selectedBrand.menu.forEach((item, index) => {
+                let itemDiv = document.createElement('div');
+                itemDiv.className = "menu-item flex flex-col py-3";
+                
+                let topRow = document.createElement('div');
+                topRow.className = "flex justify-between items-center w-full";
+                topRow.innerHTML = `
+                    <div>
+                        <span class="font-medium text-gray-800">${item.name}</span>
+                        <span class="text-xs text-emerald-600 block">$${item.price} 元</span>
+                    </div>
+                    <select name="qty_${index}" onchange="togglePizzaOptions(${index}, this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white focus:border-black">
+                        <option value="0">0 (未點)</option>
+                        <option value="1">1份</option>
+                        <option value="2">2份</option>
+                        <option value="3">3份</option>
+                        <option value="4">4份</option>
+                        <option value="5">5份</option>
+                    </select>
+                `;
+                itemDiv.appendChild(topRow);
+                
+                if (selectedBrand.canCustomize) {
+                    let optDiv = document.createElement('div');
+                    optDiv.id = `pizza_opt_box_${index}`;
+                    optDiv.className = "hidden mt-3 p-2.5 bg-gray-50 rounded-lg text-xs space-y-2 text-gray-500 border border-gray-100";
+                    optDiv.innerHTML = `<p class="font-semibold text-gray-700">↳ 客製化加料 (可多選，費用以單份累計)：</p>`;
+                    
+                    selectedBrand.customOptions.forEach((opt, optIdx) => {
+                        optDiv.innerHTML += `
+                            <label class="flex items-center space-x-2 mt-1 cursor-pointer">
+                                <input type="checkbox" name="opt_${index}_${optIdx}" value="${opt.name}" data-price="${opt.price}" class="rounded text-black focus:ring-black">
+                                <span>+ ${opt.name} (+$${opt.price}元)</span>
+                            </label>
+                        `;
+                    });
+                    itemDiv.appendChild(optDiv);
+                }
+                menuContainer.appendChild(itemDiv);
+            });
+        });
+
+        function togglePizzaOptions(index, qty) {
+            const optBox = document.getElementById(`pizza_opt_box_${index}`);
+            if (optBox) {
+                if (parseInt(qty) > 0) {
+                    optBox.classList.remove('hidden');
+                } else {
+                    optBox.classList.add('hidden');
+                    const checkboxes = optBox.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => cb.checked = false);
+                }
+            }
+        }
+
+        function backToEntrance() {
+            document.getElementById('order-stage').classList.add('hidden');
+            document.getElementById('entrance-stage').classList.remove('hidden');
+        }
+
+        drawCanvas();
+
+        // 唯一下單送出與發送函式 (已帶入您的專屬 Google 網址)
+        document.getElementById('menuForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let finalOrderItems = [];
+            let totalAmount = 0;
+
+            selectedBrand.menu.forEach((item, index) => {
+                const qtySelect = document.querySelector(`select[name="qty_${index}"]`);
+                const qty = parseInt(qtySelect.value);
+                
+                if (qty > 0) {
+                    let itemDescription = `${item.name} x ${qty}`;
+                    let itemPriceSum = item.price * qty;
+                    let addedOptions = [];
+
+                    if (selectedBrand.canCustomize) {
+                        selectedBrand.customOptions.forEach((opt, optIdx) => {
+                            const cb = document.querySelector(`input[name="opt_${index}_${optIdx}"]`);
+                            if (cb && cb.checked) {
+                                addedOptions.push(opt.name);
+                                itemPriceSum += (opt.price * qty);
+                            }
+                        });
+                    }
+
+                    if (addedOptions.length > 0) {
+                        itemDescription += ` [加料: ${addedOptions.join('+')}]`;
+                    } else if (selectedBrand.canCustomize) {
+                        itemDescription += ` [原味無加料]`;
+                    }
+
+                    finalOrderItems.push(itemDescription);
+                    totalAmount += itemPriceSum;
+                }
+            });
+
+            if (finalOrderItems.length === 0) {
+                alert("❌ 請至少選擇一項餐點再送出！");
+                return;
+            }
+
+            const orderData = {
+                brand: selectedBrand.name,
+                name: document.getElementById('cust_name').value,
+                phone: document.getElementById('cust_phone').value,
+                date: document.getElementById('pickup_date').value,
+                time: document.getElementById('pickup_time').value,
+                order_content: finalOrderItems.join(' ｜ '),
+                total: totalAmount,
+                note: document.getElementById('order_note').value || "無"
+            };
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "訂單傳送中...";
+
+            // 已填入您提供的正式 Google 部署網址
+            const gas_url = "https://script.google.com/macros/s/AKfycbz2OSGlYoUryM6Ql3jjR1pakFDpWm0PwqsAIpo59liFFZa-6HlHuQHpF4XLXvXoNBpz/exec";
+
+            fetch(gas_url, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(() => {
+                alert(`🎉 預訂成功！\n\n您的取餐時間：${orderData.date} ${orderData.time}\n餐點已同步至 ${orderData.brand} 後台。\n\n應付總金額：$${orderData.total} 元\n\n⚠️ 提醒：現場付款時主動出示問卷填寫完成畫面，可享現場現折 10 元優惠！`);
+                document.getElementById('menuForm').reset();
+                backToEntrance();
+            })
+            .catch(err => {
+                alert("❌ 系統忙碌中，請直接洽詢現場工作人員。");
+                console.error(err);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "送出預訂單";
+            });
+        });
+    </script>
+</body>
+</html>
