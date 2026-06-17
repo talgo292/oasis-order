@@ -47,6 +47,11 @@
             </div>
             <p class="text-[10px] text-stone-500 mt-3 text-center border-t border-stone-800 pt-2">⚠️ 現場付款時請主動出示問卷完成畫面折抵 10 元</p>
         </div>
+
+        <div class="mt-6 p-4 bg-gray-100 rounded-xl border border-gray-200 text-[11px] text-gray-500 leading-relaxed space-y-1.5">
+            <p>1. 本系統僅供 NX SPACE 綠洲場快閃策展活動預備點餐使用，系統所蒐集之顧客個人資料與消費紀錄僅得作為現場備餐及消費者聯繫相關用途。使用者於進行點餐時，即視為已詳閱、瞭解並完全同意本空間之各項場地使用規定與隱私保護聲明。</p>
+            <p>2. 本服務系統之架構、頁面設計及相關品牌資產，均歸屬 NX SPACE 馜享空間及卡馜咖啡館所有，本公司保留本預點服務、活動內容調整與最終解釋之所有權利。</p>
+        </div>
     </div>
 
     <div id="order-stage" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -107,7 +112,7 @@
     </div>
 
     <script>
-        // 廠商與菜單資料庫（完美對齊根目錄圖片結構）
+        // 廠商與菜單資料庫
         const brands = [
             {
                 id: "yu-tian",
@@ -151,7 +156,6 @@
         const canvas = document.getElementById('brandCanvas');
         const ctx = canvas.getContext('2d');
 
-        // 建立圖片監聽，非同步載入完畢即立刻驅動 Canvas 局部重繪
         const brandImages = {};
         let loadedCount = 0;
 
@@ -215,7 +219,6 @@
             }
         }
 
-        // 點擊 Canvas 觸發
         canvas.addEventListener('click', function(event) {
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left; 
@@ -224,7 +227,6 @@
             else if (Math.sqrt((x-270)**2 + (y-90)**2) < 55) { showBrandCard(brands[1]); }
         });
 
-        // 動態注入核心：同步修正 IG / FB 的 href 失效問題
         function showBrandCard(brand) {
             selectedBrand = brand; 
             drawCanvas();
@@ -236,7 +238,6 @@
             document.getElementById('link-fb').href = brand.fb;
         }
 
-        // 點擊按鈕生成點餐品項
         document.getElementById('go-order-btn').addEventListener('click', function() {
             document.getElementById('entrance-stage').classList.add('hidden');
             document.getElementById('order-stage').classList.remove('hidden');
@@ -305,7 +306,6 @@
             document.getElementById('entrance-stage').classList.remove('hidden');
         }
 
-        // 🌟 核心：顧客預訂紀錄快取控制邏輯
         function checkOrderHistory() {
             const localData = localStorage.getItem('nx_space_last_order');
             const historyCard = document.getElementById('history-card');
@@ -332,11 +332,9 @@
             }
         }
 
-        // 初始化渲染
         drawCanvas();
         checkOrderHistory();
 
-        // 預訂單送出事件
         document.getElementById('menuForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -404,13 +402,14 @@
                 body: JSON.stringify(orderData)
             })
             .then(() => {
-                // 🌟 當次點餐成功，寫入快取，供顧客之後重複回來看
                 localStorage.setItem('nx_space_last_order', JSON.stringify(orderData));
                 
-                alert(`🎉 預訂成功！\n\n您的取餐時間：${orderData.date} ${orderData.time}\n餐點已同步至 ${orderData.brand} 後台。\n\n應付總金額：$${orderData.total} 元\n\n⚠️ 提醒：現場付款時主動出示問卷填寫完成畫面，可享現場現折 10 元優惠！`);
+                // 🌟 關鍵優化：修正跳出提示框內文，加入訂單成立聲明與修改規範
+                alert(`🎉 預訂成功！\n\n您的取餐時間：${orderData.date} ${orderData.time}\n餐點已同步至 ${orderData.brand} 後台。\n\n應付總金額：$${orderData.total} 元\n\n⚠️ 重要提醒：\n1. 訂單送出後即正式成立，如需修改或取消訂單，請自行主動聯繫廠商。若未取餐，仍須承擔相關備餐損失。\n2. 現場付款時主動出示問卷填寫完成畫面，可享現場現折 10 元優惠！`);
+                
                 document.getElementById('menuForm').reset();
                 backToEntrance();
-                checkOrderHistory(); // 重新整理首頁小卡
+                checkOrderHistory(); 
             })
             .catch(err => {
                 alert("❌ 系統忙碌中，請直接洽詢現場工作人員。");
