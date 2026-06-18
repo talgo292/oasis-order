@@ -133,7 +133,19 @@
                 </div>
             </div>
 
-            <div id="dining-option-container" class="space-y-1"></div>
+            <div id="dining-option-box" class="hidden">
+                <label class="block text-gray-700 font-medium mb-1 mt-2">用餐方式</label>
+                <div class="flex space-x-6 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="dining_style" value="外帶" checked class="w-4 h-4 text-black focus:ring-black border-gray-300">
+                        <span class="text-gray-800 font-medium">🛍️ 外帶</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="radio" name="dining_style" value="內用" class="w-4 h-4 text-black focus:ring-black border-gray-300">
+                        <span class="text-gray-800 font-medium">🍽️ 內用</span>
+                    </label>
+                </div>
+            </div>
 
             <div class="border-t border-b border-gray-100 py-4 my-4">
                 <p class="font-bold text-gray-800 mb-3 text-base">🍽️ 線上菜單（可多選）</p>
@@ -249,7 +261,7 @@
         canvas.addEventListener('click', function(event) {
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left; 
-            const y = event.clientY - top;
+            const y = event.clientY - rect.top; // 完美修復座標偏離Bug
             if (Math.sqrt((x-90)**2 + (y-70)**2) < 55) showBrandCard(brands[0]);
             else if (Math.sqrt((x-270)**2 + (y-70)**2) < 55) showBrandCard(brands[1]);
         });
@@ -279,23 +291,12 @@
                 dateSelect.appendChild(opt);
             });
 
-            // 完美注入用餐方式選鈕
-            const diningContainer = document.getElementById('dining-option-container');
-            diningContainer.innerHTML = "";
+            // 控制用餐方式顯示或隱藏
+            const diningBox = document.getElementById('dining-option-box');
             if (selectedBrand.hasDiningOption) {
-                diningContainer.innerHTML = `
-                    <label class="block text-gray-700 font-medium mb-1 mt-2">用餐方式</label>
-                    <div class="flex space-x-6 p-2 bg-gray-50 rounded-lg border border-gray-100">
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="dining_style" value="外帶" checked class="w-4 h-4 text-black focus:ring-black border-gray-300">
-                            <span class="text-gray-800 font-medium">🛍️ 外帶</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="dining_style" value="內用" class="w-4 h-4 text-black focus:ring-black border-gray-300">
-                            <span class="text-gray-800 font-medium">🍽️ 內用</span>
-                        </label>
-                    </div>
-                `;
+                diningBox.classList.remove('hidden');
+            } else {
+                diningBox.classList.add('hidden');
             }
 
             const menuContainer = document.getElementById('menu_list_container');
@@ -430,9 +431,12 @@
             }
 
             let diningStyle = "外帶";
-            const diningRadio = document.querySelector('input[name="dining_style"]:checked');
-            if (diningRadio) {
-                diningStyle = diningRadio.value;
+            // 只有當用餐方式區塊顯示時，才去抓選取的值
+            if (selectedBrand.hasDiningOption) {
+                const diningRadio = document.querySelector('input[name="dining_style"]:checked');
+                if (diningRadio) {
+                    diningStyle = diningRadio.value;
+                }
             }
 
             const orderData = {
