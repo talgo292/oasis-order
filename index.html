@@ -82,7 +82,7 @@
         </div>
 
         <div class="mt-6 p-4 bg-white rounded-xl border border-stone-200 shadow-sm text-center">
-            <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎品牌進駐！餐車與場租合作</p>
+            <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎 brand 進駐！餐車與場租合作</p>
             <div class="flex justify-center space-x-3 text-xs">
                 <a href="https://lin.ee/VAwAg1I" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#06C755] text-white rounded-full font-medium shadow-sm flex items-center">LINE 客服</a>
                 <a href="https://www.facebook.com/nxspace254" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#1877F2] text-white rounded-full font-medium shadow-sm flex items-center">臉書專頁</a>
@@ -114,23 +114,28 @@
                 <input type="tel" id="cust_phone" required class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-gray-700 font-medium mb-1">取餐日期</label>
-                    <select id="pickup_date" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black">
-                    </select>
+            <div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">取餐日期</label>
+                        <select id="pickup_date" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">取餐時間</label>
+                        <select id="pickup_time" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black">
+                            <option value="" disabled selected>請選擇時間</option>
+                            <option value="17:30">17:30</option>
+                            <option value="18:00">18:00</option>
+                            <option value="18:30">18:30</option>
+                            <option value="19:00">19:00</option>
+                            <option value="19:30">19:30</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-gray-700 font-medium mb-1">取餐時間</label>
-                    <select id="pickup_time" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black">
-                        <option value="" disabled selected>請選擇時間</option>
-                        <option value="17:30">17:30</option>
-                        <option value="18:00">18:00</option>
-                        <option value="18:30">18:30</option>
-                        <option value="19:00">19:00</option>
-                        <option value="19:30">19:30</option>
-                    </select>
-                </div>
+                <p class="text-[11px] text-amber-600 font-medium mt-1.5 flex items-center bg-amber-50/50 px-2 py-1 rounded border border-amber-100/50">
+                    💡 餐點預約訂購的截止時間為取餐當日 13:00 前。
+                </p>
             </div>
 
             <div id="dining-option-box" class="hidden">
@@ -170,7 +175,7 @@
                 ig: "https://www.instagram.com/956leissmoker/", 
                 fb: "https://www.facebook.com/profile.php?id=100090128882932&locale=zh_TW",
                 imgUrl: "yu-tian.jpg", 
-                availableDates: ["6/19 (五)", "6/20 (六)", "6/21 (日)"],
+                rawDates: [{ text: "6/19 (五)", m: 6, d: 19 }, { text: "6/20 (六)", m: 6, d: 20 }, { text: "6/21 (日)", m: 6, d: 21 }],
                 hasDiningOption: false,
                 canCustomize: false,
                 menu: [
@@ -186,7 +191,7 @@
                 ig: "https://www.instagram.com/tothepizza/", 
                 fb: "https://www.facebook.com/tothepizza?locale=zh_TW",
                 imgUrl: "to-the-pizza.jpg", 
-                availableDates: ["6/19 (五)", "6/20 (六)"],
+                rawDates: [{ text: "6/19 (五)", m: 6, d: 19 }, { text: "6/20 (六)", m: 6, d: 20 }],
                 hasDiningOption: true,
                 canCustomize: true,
                 customOptions: [
@@ -261,7 +266,7 @@
         canvas.addEventListener('click', function(event) {
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left; 
-            const y = event.clientY - rect.top; // 修正點擊偏離 Bug
+            const y = event.clientY - rect.top;
             if (Math.sqrt((x-90)**2 + (y-70)**2) < 55) showBrandCard(brands[0]);
             else if (Math.sqrt((x-270)**2 + (y-70)**2) < 55) showBrandCard(brands[1]);
         });
@@ -284,12 +289,42 @@
             
             const dateSelect = document.getElementById('pickup_date');
             dateSelect.innerHTML = '<option value="" disabled selected>請選擇日期</option>';
-            selectedBrand.availableDates.forEach(date => {
+            
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1; 
+            const currentDate = now.getDate();
+            const currentHour = now.getHours();
+
+            let hasValidDate = false;
+
+            selectedBrand.rawDates.forEach(dateObj => {
                 let opt = document.createElement('option');
-                opt.value = date;
-                opt.textContent = date;
-                dateSelect.appendChild(opt);
+                opt.value = dateObj.text;
+                opt.textContent = dateObj.text;
+
+                // 🌟 同步修正：當日 13:00 截單的核心判定 🌟
+                if (currentMonth === dateObj.m && currentDate === dateObj.d) {
+                    if (currentHour >= 13) {
+                        opt.disabled = true;
+                        opt.textContent = dateObj.text + " (⚠️ 今日13點已截止預訂)";
+                    } else {
+                        hasValidDate = true;
+                        dateSelect.appendChild(opt);
+                    }
+                } else {
+                    hasValidDate = true;
+                    dateSelect.appendChild(opt);
+                }
+                
+                if (opt.disabled) {
+                    dateSelect.appendChild(opt);
+                }
             });
+
+            if (!hasValidDate) {
+                openCustomModal("提示", "<p class='text-center py-2 text-red-500 font-medium'>⚠️ 本檔期線上預訂已全數截止！<br>歡迎前往現場直接購買。</p>", `<button onclick="backToEntrance()" class="px-4 py-2 bg-gray-900 text-white rounded-lg text-xs">返回</button>`);
+                return;
+            }
 
             // 控制用餐方式顯示或隱藏
             const diningBox = document.getElementById('dining-option-box');
@@ -355,6 +390,7 @@
         function backToEntrance() {
             document.getElementById('order-stage').classList.add('hidden');
             document.getElementById('entrance-stage').classList.remove('hidden');
+            closeCustomModal();
         }
 
         function checkOrderHistory() {
@@ -438,7 +474,6 @@
                 }
             }
 
-            // 調整物件屬性排列順序：將 dining_option 擺放在 total 與 note 之間，以符合後台試算表的接收欄位順序
             const orderData = {
                 brand: selectedBrand.name,
                 name: document.getElementById('cust_name').value,
@@ -447,7 +482,7 @@
                 time: document.getElementById('pickup_time').value,
                 order_content: finalItems.join(' ｜ '),
                 total: total,
-                dining_option: diningStyle, // 成功擺在總金額與備註說明中間！
+                dining_option: diningStyle, 
                 note: document.getElementById('order_note').value || "無"
             };
 
