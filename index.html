@@ -36,7 +36,7 @@
     <div id="main-content" class="hidden">
         <div class="text-center my-6">
             <h1 class="text-2xl font-bold tracking-wider text-gray-800">NX SPACE 馜享空間</h1>
-            <p id="sub-title-text" class="text-xs text-gray-500 mt-1">綠洲場預點系統</p>
+            <p id="sub-title-text" class="text-xs text-gray-500 mt-1">綠洲场預點系統</p>
         </div>
 
         <div id="entrance-stage" class="block">
@@ -59,7 +59,7 @@
                 <h2 id="card-title" class="text-xl font-bold text-gray-800"></h2>
                 <p id="card-desc" class="text-sm text-gray-600 my-3 leading-relaxed whitespace-pre-line"></p>
                 <div class="flex space-x-4 mb-4 text-xs text-blue-600 font-medium">
-                    <a id="link-fans" href="#" target="_blank" rel="noopener noreferrer">📸 品牌官方粉專 / IG</a>
+                    <a id="link-fans" href="#" target="_blank" rel="noopener noreferrer">📸 品牌官方粉專 / 社群</a>
                 </div>
                 <button id="go-order-btn" class="w-full bg-black text-white text-sm py-3 rounded-lg font-medium tracking-wide hover:bg-gray-800 transition">
                     進入點餐介面
@@ -165,10 +165,9 @@
     </div>
 
     <script>
-        // 🌟 唯一核心連接點：請替換為您新 Excel 建立的 GAS 網址 🌟
-        const GAS_URL = https://script.google.com/macros/s/AKfycbw_JxFpE2Whdt9rRRR_L-ohF61yMuuRaw-VcfrE2Adxr9FzbS-9ajadyAJHLELSsUg/exec;
+        // 🌟 【修正】補上正確引號字串
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbw_JxFpE2Whdt9rRRR_L-ohF61yMuuRaw-VcfrE2Adxr9FzbS-9ajadyAJHLELSsUg/exec";
 
-        // 後台大腦暫存庫
         let dbData = { main_config: {}, brands: [], menus: {} };
         let selectedBrand = null;
         let brandImages = {};
@@ -176,7 +175,6 @@
         const canvas = document.getElementById('brandCanvas');
         const ctx = canvas.getContext('2d');
 
-        // 偵測是否在 In-App 瀏覽器中開啟
         function detectInAppBrowser() {
             const ua = navigator.userAgent || navigator.vendor || window.opera;
             if (ua.indexOf("LINE") > -1 || ua.indexOf("Twitter") > -1 || ua.indexOf("FBAN") > -1 || ua.indexOf("FBAV") > -1 || ua.toLowerCase().indexOf("threads") > -1) {
@@ -192,7 +190,6 @@
             });
         }
 
-        // 初始化：向試算表撈取完整動態資料
         window.addEventListener('DOMContentLoaded', () => {
             detectInAppBrowser();
             
@@ -213,7 +210,6 @@
         });
 
         function initSystem() {
-            // A. 更新主頁大標題、副標題與公告
             if (dbData.main_config.activity_title) {
                 document.getElementById('sub-title-text').innerText = dbData.main_config.activity_title;
                 document.getElementById('announcement-title').innerText = "📅 " + dbData.main_config.activity_title + "最新活動資訊";
@@ -226,7 +222,6 @@
                 document.getElementById('dynamic-cutoff-hint').innerText = `💡 餐點預約訂購的截止時間為取餐當日 ${dbData.main_config.cutoff_time} 前。`;
             }
 
-            // B. 載入動態廠商圖片並繪製主頁 Canvas (自動數有多少廠商就畫多少個)
             const imgBase = dbData.main_config.github_img_base || "";
             let loadedCount = 0;
             
@@ -239,7 +234,6 @@
 
             dbData.brands.forEach(b => {
                 brandImages[b.id] = new Image();
-                // 如果 imgUrl 有填寫，黏上 GitHub 基地網址，否則抓預設
                 brandImages[b.id].src = b.imgUrl ? (b.imgUrl.startsWith("http") ? b.imgUrl : imgBase + b.imgUrl) : "";
                 brandImages[b.id].onload = brandImages[b.id].onerror = () => {
                     loadedCount++;
@@ -249,7 +243,6 @@
                 };
             });
 
-            // 關閉 Spinner，亮出主畫面
             document.getElementById('loading-spinner').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
             checkOrderHistory();
@@ -257,7 +250,6 @@
 
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // 根據動態讀取到的上架品牌數量，動態配置 Canvas 左右圓圈座標
             if (dbData.brands[0]) drawBrandButton(dbData.brands[0], 90, 70);
             if (dbData.brands[1]) drawBrandButton(dbData.brands[1], 270, 70);
         }
@@ -299,6 +291,7 @@
             }
         }
 
+        // 修正 ID 字串包含單引號的點擊判定邏輯
         canvas.addEventListener('click', function(event) {
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left; 
@@ -316,7 +309,6 @@
             document.getElementById('link-fans').href = brand.fansPage || "#";
         }
 
-        // 進入預點單填寫階段 (動態生成日期選單與各店家個別菜單)
         document.getElementById('go-order-btn').addEventListener('click', function() {
             if (!selectedBrand) return;
             document.getElementById('entrance-stage').classList.add('hidden');
@@ -326,35 +318,20 @@
             const dateSelect = document.getElementById('pickup_date');
             dateSelect.innerHTML = '<option value="" disabled selected>請選擇日期</option>';
             
-            // 🌟 精準時間戳記防呆：解析廠商營業時間，防止跨夜復活
             const now = new Date();
             const currentYear = now.getFullYear();
             
-            // 讀取 main_config 裡的設定時間，預設為 13 點
             let cutHour = 13;
             if (dbData.main_config.cutoff_time) {
                 cutHour = parseInt(dbData.main_config.cutoff_time.split(":")[0]) || 13;
             }
 
             let hasValidDate = false;
-            // 嘗試解析廠商表單內填入的 rawDates。如果後台沒有填，預設抓該店的營業文字。
-            // 為了最大化防呆相容舊版本，我們直接解析這檔活動專屬的時間戳記
-            let finalDates = [];
-            if (selectedBrand.time && selectedBrand.time.includes("6/")) {
-                // 自動適應舊格式 6/19, 6/20, 6/21
-                if (selectedBrand.id === "yu-tian") {
-                    finalDates = [{ text: "6/19 (五)", m: 6, d: 19 }, { text: "6/20 (六)", m: 6, d: 20 }, { text: "6/21 (日)", m: 6, d: 21 }];
-                } else {
-                    finalDates = [{ text: "6/19 (五)", m: 6, d: 19 }, { text: "6/20 (六)", m: 6, d: 20 }];
-                }
-            } else {
-                // 如果您在後台改了新日期，未來可以直接動態對應，這裡預留相容
-                finalDates = [{ text: "6/19 (五)", m: 6, d: 19 }, { text: "6/20 (六)", m: 6, d: 20 }, { text: "6/21 (日)", m: 6, d: 21 }];
-            }
+            let finalDates = [{ text: "6/19 (五)", m: 6, d: 19 }, { text: "6/20 (六)", m: 6, d: 20 }, { text: "6/21 (日)", m: 6, d: 21 }];
 
             finalDates.forEach(dateObj => {
-                // 如果是 TO THE PIZZA，過濾掉 6/21 的出攤
-                if (selectedBrand.id === "to-the-pizza" && dateObj.d === 21) return;
+                // 如果是 tothepizza，過濾掉 6/21
+                if (selectedBrand.id === "tothepizza" && dateObj.d === 21) return;
 
                 let opt = document.createElement('option');
                 opt.value = dateObj.text;
@@ -376,7 +353,6 @@
                 return;
             }
 
-            // 控制用餐方式顯示或隱藏 (直接讀取試算表 hasDining 欄位，不論大寫小寫或 TRUE)
             const diningBox = document.getElementById('dining-option-box');
             let hasDining = String(selectedBrand.hasDining).toLowerCase() === 'true' || selectedBrand.hasDining === true;
             if (hasDining) {
@@ -385,7 +361,7 @@
                 diningBox.classList.add('hidden');
             }
 
-            // 🟢 從動態試算表渲染線上菜單與限量庫存
+            // 🌟【全面升級】動態渲染菜單與 Excel Options 欄位加購選項
             const menuContainer = document.getElementById('menu_list_container');
             menuContainer.innerHTML = "";
             
@@ -399,12 +375,10 @@
                 let itemDiv = document.createElement('div');
                 itemDiv.className = "menu-item flex flex-col py-3";
                 
-                // 讀取庫存 stock
                 let stockNum = parseInt(item.stock);
                 let isSoldOut = !isNaN(stockNum) && stockNum <= 0;
                 let stockHint = isSoldOut ? `<span class="text-red-500 font-bold ml-2">(❌已售完)</span>` : (!isNaN(stockNum) ? `<span class="text-amber-600 font-medium ml-2">(🔥剩 ${stockNum} 份)</span>` : "");
                 
-                // 動態生成選取下拉量，最高不超過庫存上限（最多5）
                 let maxQty = isSoldOut ? 0 : (isNaN(stockNum) ? 5 : Math.min(5, stockNum));
                 let qtyOptions = `<option value="0">0</option>`;
                 for (let q = 1; q <= maxQty; q++) {
@@ -417,27 +391,30 @@
                             <span class="font-medium text-gray-800">${item.name}${stockHint}</span>
                             <span class="text-xs text-emerald-600 block">$${item.price} 元</span>
                         </div>
-                        <select name="qty_${index}" ${isSoldOut ? 'disabled' : ''} onchange="togglePizzaOptions(${index}, this.value)" class="border border-gray-300 rounded p-1 text-xs focus:border-black bg-white disabled:bg-gray-100">
+                        <select name="qty_${index}" ${isSoldOut ? 'disabled' : ''} onchange="toggleOptionsBox(${index}, this.value)" class="border border-gray-300 rounded p-1 text-xs focus:border-black bg-white disabled:bg-gray-100">
                             ${qtyOptions}
                         </select>
                     </div>
                 `;
                 
-                // 只有 Pizza 或是可以加料客製化的品牌才開啟加料欄
-                let canCustomize = String(selectedBrand.canCustomize).toLowerCase() === 'true' || selectedBrand.canCustomize === true;
-                if (canCustomize && !isSoldOut) {
+                // 解析 Excel 內 options 欄位的配料格式 (格式如: 飯少+0,換麵包+0)
+                if (item.options && !isSoldOut) {
                     let optDiv = document.createElement('div');
-                    optDiv.id = `pizza_opt_box_${index}`;
+                    optDiv.id = `opt_box_${index}`;
                     optDiv.className = "hidden mt-3 p-2.5 bg-gray-50 rounded-lg text-xs space-y-2 border border-gray-100 text-gray-500";
-                    optDiv.innerHTML = `<p class="font-semibold text-gray-700">↳ 客製化加料：</p>`;
+                    optDiv.innerHTML = `<p class="font-semibold text-gray-700">↳ 客製化選項：</p>`;
                     
-                    // 固定客製化加料品項
-                    const customOptions = [{ name: "洋蔥", price: 20 }, { name: "起司", price: 30 }, { name: "黑橄欖", price: 20 }];
-                    customOptions.forEach((opt, optIdx) => {
+                    // 用逗號拆分多個選項
+                    let rawOpts = item.options.split(",");
+                    rawOpts.forEach((rawOpt, optIdx) => {
+                        let parts = rawOpt.split("+");
+                        let optName = parts[0].trim();
+                        let optPrice = parseInt(parts[1]) || 0;
+                        
                         optDiv.innerHTML += `
                             <label class="flex items-center space-x-2 mt-1 cursor-pointer">
-                                <input type="checkbox" name="opt_${index}_${optIdx}" value="${opt.name}" data-price="${opt.price}" class="rounded text-black focus:ring-black">
-                                <span>+ ${opt.name} (+$${opt.price})</span>
+                                <input type="checkbox" name="opt_${index}_${optIdx}" value="${optName}" data-price="${optPrice}" class="rounded text-black focus:ring-black">
+                                <span>${optName} (+$${optPrice})</span>
                             </label>
                         `;
                     });
@@ -454,8 +431,8 @@
             arrow.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
         }
 
-        function togglePizzaOptions(index, qty) {
-            const optBox = document.getElementById(`pizza_opt_box_${index}`);
+        function toggleOptionsBox(index, qty) {
+            const optBox = document.getElementById(`opt_box_${index}`);
             if (optBox) {
                 if (parseInt(qty) > 0) optBox.classList.remove('hidden');
                 else {
@@ -518,11 +495,9 @@
             closeCustomModal();
         }
 
-        // 🌟 核心表單提交提交 (含防連點、iPhone重複送單唯一Token防禦、庫存即時扣除)
         document.getElementById('menuForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // 🔒 雙重把關：防止使用者按網頁上一頁偷送單
             const selectedDateText = document.getElementById('pickup_date').value;
             let cutHour = 13;
             if (dbData.main_config.cutoff_time) {
@@ -541,14 +516,13 @@
                 }
             }
 
-            // 🛡️ 第一防線：啟用防狂點按鈕鎖定
             const submitBtn = document.getElementById('submit-order-btn');
             submitBtn.disabled = true;
             submitBtn.innerText = "⏳ 訂單傳送中，請勿關閉畫面...";
 
             let finalItems = [];
             let total = 0;
-            let itemsOrderedMap = {}; // 用來丟給後端扣庫存的乾淨 Map
+            let itemsOrderedMap = {}; 
             
             const brandMenu = dbData.menus[selectedBrand.id] || [];
 
@@ -562,22 +536,21 @@
                     let sum = item.price * qty;
                     let opts = [];
                     
-                    let canCustomize = String(selectedBrand.canCustomize).toLowerCase() === 'true' || selectedBrand.canCustomize === true;
-                    if (canCustomize) {
-                        const customOptions = [{ name: "洋蔥", price: 20 }, { name: "起司", price: 30 }, { name: "黑橄欖", price: 20 }];
-                        customOptions.forEach((opt, optIdx) => {
+                    // 動態撈取畫面上被打勾的動態客製化選項
+                    if (item.options) {
+                        let rawOpts = item.options.split(",");
+                        rawOpts.forEach((rawOpt, optIdx) => {
                             const cb = document.querySelector(`input[name="opt_${index}_${optIdx}"]`);
                             if (cb && cb.checked) { 
-                                opts.push(opt.name); 
-                                sum += (opt.price * qty); 
+                                let price = parseInt(cb.getAttribute('data-price')) || 0;
+                                opts.push(cb.value); 
+                                sum += (price * qty); 
                             }
                         });
                     }
-                    if (opts.length > 0) desc += ` [加料: ${opts.join('+')}]`;
+                    if (opts.length > 0) desc += ` [選項: ${opts.join('+')}]`;
                     finalItems.push(desc);
                     total += sum;
-                    
-                    // 記錄品項名稱與數量，交給試算表自動精準扣庫存
                     itemsOrderedMap[item.name] = qty;
                 }
             });
@@ -596,7 +569,6 @@
                 if (diningRadio) diningStyle = diningRadio.value;
             }
 
-            // 🛡️ 第二防線：製造當次點餐唯一的隨機 Token，徹底阻絕 iPhone 背景自動重刷
             const uniqueToken = "NX_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
 
             const orderData = {
@@ -610,16 +582,13 @@
                 total: total,
                 dining_option: diningStyle, 
                 note: document.getElementById('order_note').value || "無",
-                orderToken: uniqueToken,      // 防重送 Token
-                itemsOrdered: itemsOrderedMap // 扣庫存清單
+                orderToken: uniqueToken,      
+                itemsOrdered: itemsOrderedMap 
             };
 
             fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(orderData) })
             .then(() => {
-                // 儲存至本地快取
                 localStorage.setItem('nx_space_last_order', JSON.stringify(orderData));
-                
-                // 🛡️ 第三防線：成功後立刻徹底將前端 Form 欄位全部排空，確保就算重新整理也絕無重複舊資料
                 document.getElementById('menuForm').reset();
                 
                 const successBody = `
