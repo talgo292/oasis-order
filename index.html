@@ -522,11 +522,11 @@
         });
 
         function executeFinalSubmit() {
-            openCustomModal("⏳ 訂單傳送中", "<p class='text-center py-4 text-stone-500 font-medium animate-pulse'>正在向綠洲總表登記席位，請勿關閉網頁...</p>", "");
+            openCustomModal("⏳ 訂單傳送中", "<p class='text-center py-4 text-stone-500 font-medium animate-pulse'>正在紀錄您的餐點資訊，請勿關閉網頁...</p>", "");
 
             fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(window.pendingOrder) }).then(() => {
                 localStorage.setItem('nx_space_last_order', JSON.stringify(window.pendingOrder));
-                alert("🎉 預訂成功！已同步通知廠商群組備餐。");
+                alert("🎉 預訂成功！已通知廠商進行備餐作業。");
                 location.reload();
             }).catch(() => {
                 alert("發送失敗，請檢查網路連線後再試！");
@@ -551,7 +551,7 @@
                     ⚠️ 聲明：此功能非取消訂單！
                 </p>
                 <p class="text-stone-600 mt-2 text-center text-xs leading-relaxed">
-                    此動作僅消除您手機網頁上的快取紀錄。您的預訂單早已即時傳送至系統庫存，點餐仍已完成。如需取消或修改，請務必直接聯繫店家廠商。
+                    此動作僅清除您手機網頁上的快取紀錄，您所預定之餐點已即時通知廠商進行備餐，如需取消或修改，請務必直接聯繫廠商。
                 </p>
             `;
             const actionButtons = `
