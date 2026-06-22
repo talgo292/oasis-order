@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NX SPACE 點餐系統 3.0</title>
+    <title>NX SPACE 點餐系統 3.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8f9fa; font-family: sans-serif; }
@@ -63,9 +63,12 @@
             <div id="brand-card" class="hidden mt-4 p-5 bg-white rounded-xl shadow-sm border border-gray-100">
                 <h2 id="card-title" class="text-xl font-bold text-gray-800"></h2>
                 <p id="card-desc" class="text-sm text-gray-600 my-3 leading-relaxed whitespace-pre-line"></p>
-                <div class="flex space-x-4 mb-4 text-xs text-blue-600 font-medium">
-                    <a id="link-fans" href="#" target="_blank" rel="noopener noreferrer">📸 品牌官方社群</a>
+                
+                <div id="social-links-box" class="flex space-x-4 mb-4 text-xs font-medium">
+                    <a id="link-fb" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 hidden">🔵 官方 Facebook</a>
+                    <a id="link-ig" href="#" target="_blank" rel="noopener noreferrer" class="text-pink-600 hidden">📸 官方 Instagram</a>
                 </div>
+                
                 <button id="go-order-btn" class="w-full bg-black text-white text-sm py-3 rounded-lg font-medium tracking-wide hover:bg-gray-800 transition">
                     進入點餐介面
                 </button>
@@ -79,7 +82,6 @@
                 <div class="text-xs space-y-2 text-stone-300">
                     <p><strong>預訂商店：</strong> <span id="hist-brand"></span></p>
                     <p><strong>取餐時間：</strong> <span id="hist-time"></span></p>
-                    <p><strong>用餐方式：</strong> <span id="hist-dining" class="text-amber-400 font-medium"></span></p>
                     <p><strong>餐點內容：</strong> <span id="hist-content" class="block bg-stone-900 p-2 rounded mt-1 text-stone-200 break-all"></span></p>
                     <p class="text-right text-stone-400 font-medium">應付總額：<span id="hist-total" class="text-sm font-bold text-emerald-400"></span> 元</p>
                 </div>
@@ -93,7 +95,10 @@
                 </div>
             </div>
 
-            <div id="dynamic-footer-notice" class="mt-4 p-4 bg-gray-100 rounded-xl border border-gray-200 text-[10px] text-gray-500 leading-relaxed space-y-1.5 whitespace-pre-line"></div>
+            <div class="mt-4 p-4 bg-gray-100 rounded-xl border border-gray-200 text-[10px] text-gray-500 leading-relaxed space-y-2">
+                <p>1. 本系統僅供 NX SPACE 綠洲場快閃策展活動預備點餐使用，系統所蒐集之顧客個人資料與消費紀錄僅得作為現場備餐及消費者聯繫相關用途。使用者於進行點餐時，即視為已詳閱、瞭解並完全同意本空間之各項場地使用規定與隱私保護聲明。</p>
+                <p>2. 本服務系統之架構、頁面設計及相關品牌資產，均歸屬 NX SPACE 馜享空間及卡馜咖啡館所有，本公司保留本預點服務、活動內容調整與延期解釋之所有權利。</p>
+            </div>
         </div>
 
         <div id="order-stage" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -151,7 +156,7 @@
         let dbData = { main_config: {}, brands: [], menus: {} };
         let selectedBrand = null;
         let brandImages = {};
-        let currentVenue = "oasis"; // 預設看綠洲場
+        let currentVenue = "oasis"; 
         
         const canvas = document.getElementById('brandCanvas');
         const ctx = canvas.getContext('2d');
@@ -167,10 +172,8 @@
             detectInAppBrowser();
             fetch(GAS_URL).then(res => res.json()).then(data => {
                 dbData = data;
-                // 預設切換到綠洲
                 switchVenue('oasis');
                 
-                // 載入廠商圖片
                 const imgBase = dbData.main_config.github_img_base || "";
                 let loadedCount = 0;
                 dbData.brands.forEach(b => {
@@ -188,7 +191,6 @@
             });
         });
 
-        // 🌟 切換場館公告的邏輯
         function switchVenue(venue) {
             currentVenue = venue;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -199,7 +201,6 @@
 
             document.getElementById('announcement-title').innerText = "📅 " + title;
             document.getElementById('dynamic-announcement-box').innerText = notice;
-            document.getElementById('dynamic-footer-notice').innerText = notice;
         }
 
         function drawCanvas() {
@@ -208,7 +209,6 @@
             if (dbData.brands[1]) drawBrandButton(dbData.brands[1], 270, 70);
         }
 
-        // 🌟【精準字體切割修正】讀取 Excel 的 subName
         function drawBrandButton(brand, cx, cy) {
             const radius = 55;
             const isSelected = selectedBrand?.id === brand.id;
@@ -229,14 +229,12 @@
 
             const textY = cy + radius + 12;
             
-            // 🌟 中間文字：抓 brand.name (粗體放大)
             ctx.fillStyle = isSelected ? '#111827' : '#374151';
             ctx.font = 'bold 15px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             ctx.fillText(brand.name, cx, textY);
 
-            // 🌟 下方文字：抓 brand.subName (變小、灰字)
             if (brand.subName) {
                 ctx.font = '12px sans-serif';
                 ctx.fillStyle = '#6B7280';
@@ -251,12 +249,29 @@
             else if (dbData.brands[1] && Math.sqrt((x-270)**2 + (y-70)**2) < 55) showBrandCard(dbData.brands[1]);
         });
 
+        // 🌟 3. 動態判定顯示 FB 與 IG 連結
         function showBrandCard(brand) {
             selectedBrand = brand; drawCanvas();
             document.getElementById('brand-card').classList.remove('hidden');
             document.getElementById('card-title').innerText = brand.name + " " + (brand.subName || "");
             document.getElementById('card-desc').innerText = brand.desc || "暫無介紹";
-            document.getElementById('link-fans').href = brand.fansPage || "#";
+            
+            const fbLink = document.getElementById('link-fb');
+            const igLink = document.getElementById('link-ig');
+            
+            if (brand.fbUrl) {
+                fbLink.href = brand.fbUrl;
+                fbLink.classList.remove('hidden');
+            } else {
+                fbLink.classList.add('hidden');
+            }
+            
+            if (brand.igUrl) {
+                igLink.href = brand.igUrl;
+                igLink.classList.remove('hidden');
+            } else {
+                igLink.classList.add('hidden');
+            }
         }
 
         function toggleAnnouncement() {
@@ -269,7 +284,6 @@
             document.getElementById('entrance-stage').classList.remove('hidden');
         }
 
-        // 點餐菜單渲染與 options 處理
         document.getElementById('go-order-btn').addEventListener('click', function() {
             if (!selectedBrand) return;
             document.getElementById('entrance-stage').classList.add('hidden');
@@ -329,7 +343,6 @@
             }
         }
 
-        // 送出訂單邏輯
         document.getElementById('menuForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submit-order-btn');
