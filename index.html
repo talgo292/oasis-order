@@ -304,6 +304,18 @@
             fbLink.classList.add('hidden'); igLink.classList.add('hidden');
             if (brand.fbUrl) { fbLink.href = brand.fbUrl; fbLink.className = "text-blue-600 block"; }
             if (brand.igUrl) { igLink.href = brand.igUrl; igLink.className = "text-pink-600 block"; }
+
+            // 🌟 核心防呆：如果廠商狀態被改為「下架」，按鈕變灰且鎖死不讓點進去
+            const goOrderBtn = document.getElementById('go-order-btn');
+            if (brand.status === "下架") {
+                goOrderBtn.disabled = true;
+                goOrderBtn.innerText = "❌ 廠商暫未開放點餐";
+                goOrderBtn.className = "w-full bg-gray-300 text-gray-500 text-sm py-3 rounded-lg font-medium cursor-not-allowed";
+            } else {
+                goOrderBtn.disabled = false;
+                goOrderBtn.innerText = "進入點餐介面";
+                goOrderBtn.className = "w-full bg-black text-white text-sm py-3 rounded-lg font-medium tracking-wide hover:bg-gray-800 transition";
+            }
         }
 
         function toggleAnnouncement() {
@@ -379,53 +391,91 @@
             const noteBox = document.getElementById('note-field-box');
 
             if (isBrowseOnlyMode || dateSelect.options.length === 0) {
-                infoFields.classList.add('hidden');
-                submitBtn.classList.add('hidden');
-                noteBox.classList.add('hidden');
-                browseBanner.classList.remove('hidden');
+                infoFields.className = "space-y-4 hidden";
+                submitBtn.className = "w-full bg-emerald-600 text-white py-3 rounded-lg font-medium mt-6 hover:bg-emerald-700 transition hidden";
+                noteBox.className = "hidden";
+                browseBanner.className = "bg-stone-100 border border-stone-300 text-stone-700 text-xs p-3 rounded-lg mb-5 leading-relaxed text-center font-medium block";
             } else {
-                infoFields.classList.remove('hidden');
-                submitBtn.classList.remove('hidden');
-                noteBox.classList.remove('hidden');
-                browseBanner.classList.add('hidden');
+                infoFields.className = "space-y-4 block";
+                submitBtn.className = "w-full bg-emerald-600 text-white py-3 rounded-lg font-medium mt-6 hover:bg-emerald-700 transition block";
+                noteBox.className = "block";
+                browseBanner.className = "bg-stone-100 border border-stone-300 text-stone-700 text-xs p-3 rounded-lg mb-5 leading-relaxed text-center font-medium hidden";
 
                 const diningBox = document.getElementById('dining-option-box');
                 let hasDiningVal = String(selectedBrand.hasDining).toUpperCase();
                 if (hasDiningVal === 'TRUE' || selectedBrand.hasDining === true) {
-                    diningBox.classList.remove('hidden');
+                    diningBox.className = "block";
                 } else {
-                    diningBox.classList.add('hidden');
+                    diningBox.className = "hidden";
                 }
             }
 
             const menuContainer = document.getElementById('menu_list_container');
             menuContainer.innerHTML = "";
             const brandMenu = dbData.menus[selectedBrand.id] || [];
+            const imgBase = dbData.main_config.github_img_base || "";
 
             brandMenu.forEach((item, index) => {
                 let itemDiv = document.createElement('div');
-                itemDiv.className = "menu-item flex flex-col py-3";
+                itemDiv.className = "menu-item flex items-center justify-between py-4";
                 
-                let qtySelectorHtml = isBrowseOnlyMode ? '' : `
-                    <select name="qty_${index}" onchange="toggleOptionsBox(${index}, this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white">
-                        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                    </select>
-                `;
+                // 🌟 當日供餐上限超額防呆判定
+                let maxStock = parseInt(item.stock) || 0;
+                let alreadySold = parseInt(item.alreadySold) || 0;
+                let isOutofStock = alreadySold >= maxStock; // 當日累計數量已達上限
+                
+                let selectSelectorHtml = '';
+                let titleColorStyle = 'text-gray-800';
+                let priceLabelHtml = `<span class="text-xs text-emerald-600 block">$${item.price} 元</span>`;
+
+                if (isBrowseOnlyMode) {
+                    selectSelectorHtml = '';
+                } else if (isOutofStock) {
+                    // 超額時，鎖死選單，並提示紅色文字
+                    titleColorStyle = 'text-gray-400 line-through';
+                    priceLabelHtml = `<span class="text-xs text-red-600 font-bold block">⚠️ 該品項已超過當日供餐上限</span>`;
+                    selectSelectorHtml = `<span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded font-bold">完售</span>`;
+                } else {
+                    // 正常狀態下，動態顯示數量下拉選單
+                    selectSelectorHtml = `
+                        <select name="qty_${index}" onchange="toggleOptionsBox(${index}, this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white focus:ring-1 focus:ring-black">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    `;
+                }
+
+                // 🌟 imgUrl 渲染：精美的正方形圓角圖片框
+                let itemImgHtml = '';
+                if (item.imgUrl) {
+                    let fullImgPath = item.imgUrl.startsWith("http") ? item.imgUrl : imgBase + item.imgUrl;
+                    itemImgHtml = `
+                        <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 mr-3 shadow-sm border border-gray-100">
+                            <img src="${fullImgPath}" class="w-full h-full object-cover" alt="${item.name}">
+                        </div>
+                    `;
+                }
 
                 itemDiv.innerHTML = `
-                    <div class="flex justify-between items-center w-full">
+                    <div class="flex items-center flex-1 pr-2">
+                        ${itemImgHtml}
                         <div>
-                            <span class="font-medium text-gray-800">${item.name}</span>
-                            <span class="text-xs text-emerald-600 block">$${item.price} 元</span>
+                            <span class="font-semibold ${titleColorStyle} text-sm">${item.name}</span>
+                            ${priceLabelHtml}
                         </div>
-                        ${qtySelectorHtml}
+                    </div>
+                    <div class="flex-shrink-0">
+                        ${selectSelectorHtml}
                     </div>
                 `;
                 
-                if (item.options && !isBrowseOnlyMode) {
+                // 客製化選項渲染
+                if (item.options && !isBrowseOnlyMode && !isOutofStock) {
                     let optDiv = document.createElement('div');
                     optDiv.id = `opt_box_${index}`;
-                    optDiv.className = "hidden mt-3 p-2.5 bg-gray-50 rounded-lg text-xs space-y-2 border border-gray-100 text-gray-500";
+                    optDiv.className = "hidden mt-2 p-2 bg-gray-50 rounded-lg text-xs space-y-1 border border-gray-100 text-gray-500 w-full";
                     optDiv.innerHTML = `<p class="font-semibold text-gray-700">↳ 客製化選項：</p>`;
                     
                     item.options.split(",").forEach((rawOpt, optIdx) => {
@@ -434,16 +484,37 @@
                         let optPrice = parseInt(parts[1]) || 0;
                         optDiv.innerHTML += `
                             <label class="flex items-center space-x-2 mt-1 cursor-pointer">
-                                <input type="checkbox" name="opt_${index}_${optIdx}" value="${optName}" data-price="${optPrice}" class="rounded text-black">
+                                <input type="checkbox" name="opt_${index}_${optIdx}" value="${optName}" data-price="${optPrice}" class="rounded text-black border-gray-300 focus:ring-black">
                                 <span>${optName} (+$${optPrice})</span>
                             </label>
                         `;
                     });
-                    itemDiv.appendChild(optDiv);
+                    
+                    // 為了排版完美，建立包裝容器將客製化選單塞在餐點下方
+                    let wrapper = document.createElement('div');
+                    wrapper.className = "border-b border-gray-100/60 pb-3";
+                    wrapper.appendChild(itemDiv);
+                    wrapper.appendChild(optDiv);
+                    menuContainer.appendChild(wrapper);
+                    return;
                 }
+                
                 menuContainer.appendChild(itemDiv);
             });
         });
+
+        // 輔助函式：切換客製化區塊的顯隱
+        function toggleOptionsBox(index, value) {
+            const box = document.getElementById(`opt_box_${index}`);
+            if (!box) return;
+            if (parseInt(value) > 0) {
+                box.className = "block mt-2 p-2 bg-gray-50 rounded-lg text-xs space-y-1 border border-gray-100 text-gray-500 w-full";
+            } else {
+                box.className = "hidden";
+                // 歸零時順便取消所有勾選
+                box.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            }
+        }
 
         document.getElementById('menuForm').addEventListener('submit', function(e) {
             e.preventDefault();
