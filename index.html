@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NX SPACE 點餐系統 4.0</title>
+    <title>NX SPACE 點餐系統 4.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8f9fa; font-family: sans-serif; }
@@ -17,12 +17,12 @@
     <div id="browser-warning-banner" class="hidden mb-4 bg-amber-500 text-stone-900 text-xs font-bold p-3 rounded-xl shadow-sm border border-amber-600 animate-pulse">
         <p class="leading-relaxed">
             ⚠️ 偵測到您目前使用 App 內建瀏覽器，可能導致菜單庫存未即時更新。<br>
-            👉 <button onclick="copyCurrentUrl()" class="underline text-stone-900 font-black bg-white/40 px-1.5 py-0.5 rounded ml-1">點此複製網址</button> 至 Safari 或 Chrome 開啟！
+            👉 <button onclick="copyCurrentUrl()" class="underline text-stone-900 font-black bg-white/40 px-1.5 py-0.5 rounded ml-1">點此複製網址</button> 至 Safari 或 Chrome 開啟以獲得最佳點餐體驗！
         </p>
     </div>
 
     <div id="custom-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl border border-gray-100 transform transition-all">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl border border-gray-100 transform transition-all duration-200">
             <h3 id="modal-title" class="text-base font-bold text-gray-900 mb-2 tracking-wide"></h3>
             <div id="modal-body" class="text-xs text-gray-600 leading-relaxed mb-6 space-y-2"></div>
             <div id="modal-actions" class="flex space-x-3 justify-end text-xs font-medium"></div>
@@ -31,7 +31,7 @@
 
     <div id="loading-spinner" class="flex flex-col items-center justify-center py-20 space-y-3">
         <div class="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-xs text-gray-400 font-medium tracking-wide">．．．資料同步中，請稍後．．．</p>
+        <p class="text-xs text-gray-400 font-medium tracking-wide">同步大腦最新試算表庫存中...</p>
     </div>
 
     <div id="main-content" class="hidden">
@@ -85,7 +85,7 @@
             </div>
 
             <div class="mt-6 p-4 bg-white rounded-xl border border-stone-200 shadow-sm text-center">
-                <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎餐車｜品牌活動｜策展活動進駐！</p>
+                <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎品牌進駐！餐車與場租合作</p>
                 <div class="flex justify-center space-x-3 text-xs">
                     <a href="https://lin.ee/VAwAg1I" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#06C755] text-white rounded-full font-medium shadow-sm flex items-center">LINE 客服</a>
                     <a href="https://www.facebook.com/nxspace254" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#1877F2] text-white rounded-full font-medium shadow-sm flex items-center">臉書專頁</a>
@@ -102,8 +102,8 @@
             <button onclick="backToEntrance()" class="text-xs text-gray-400 mb-4 flex items-center">← 返回品牌選擇</button>
             <h2 id="order-target" class="text-lg font-bold text-gray-800 mb-2"></h2>
             
-            <div id="browse-only-banner" class="hidden bg-stone-100 border border-stone-300 text-stone-700 text-xs p-3 rounded-lg mb-5 leading-relaxed">
-                📢 <strong>系統提示：</strong> 目前非本週點餐檔期，此介面僅供「瀏覽菜單」使用，暫不開放線上填單預訂。
+            <div id="browse-only-banner" class="hidden bg-stone-100 border border-stone-300 text-stone-700 text-xs p-3 rounded-lg mb-5 leading-relaxed text-center font-medium">
+                📢 系統提示：目前非本週點餐檔期，此介面僅供「瀏覽菜單」使用，暫不開放線上填單預訂。
             </div>
 
             <form id="menuForm" class="space-y-4 text-sm">
@@ -166,10 +166,34 @@
         const canvas = document.getElementById('brandCanvas');
         const ctx = canvas.getContext('2d');
 
+        // 🌟 核心升級：精準在線 App 內建瀏覽器環境偵測與自動轉跳
         function detectInAppBrowser() {
             const ua = navigator.userAgent || navigator.vendor || window.opera;
-            if (ua.indexOf("LINE") > -1 || ua.indexOf("Twitter") > -1) {
-                document.getElementById('browser-warning-banner').classList.remove('hidden');
+            const currentUrl = window.location.href;
+
+            // 1. 如果是 LINE，直接走專屬後門黑魔法，自動甩到手機原生瀏覽器開啟
+            if (ua.indexOf("LINE") > -1) {
+                if (currentUrl.indexOf("openExternalBrowser=1") === -1) {
+                    const separator = currentUrl.indexOf("?") === -1 ? "?" : "&";
+                    window.location.href = currentUrl + separator + "openExternalBrowser=1";
+                    return;
+                }
+            }
+
+            // 2. 萬能 App 內置沙盒防線 (包含 Threads, FB, IG, Twitter 等)
+            const isInApp = (
+                ua.indexOf("Twitter") > -1 || 
+                ua.indexOf("FBAN") > -1 || 
+                ua.indexOf("FBAV") > -1 || 
+                ua.toLowerCase().indexOf("threads") > -1 || 
+                ua.indexOf("LINE") > -1 ||
+                (ua.indexOf("Mobile/") > -1 && ua.indexOf("Safari/") === -1)
+            );
+
+            // 3. 只要判定被困在 App 監獄中，立刻自動亮出頂部提醒引導
+            if (isInApp) {
+                const banner = document.getElementById('browser-warning-banner');
+                if (banner) banner.classList.remove('hidden');
             }
         }
 
@@ -177,8 +201,9 @@
             detectInAppBrowser();
             fetch(GAS_URL).then(res => res.json()).then(data => {
                 dbData = data;
-                switchVenue('oasis');
+                switchVenue('oasis'); // 預設展示綠洲場
                 
+                // 異步同步加載所有廠商的圓形圖片
                 const imgBase = dbData.main_config.github_img_base || "";
                 let loadedCount = 0;
                 dbData.brands.forEach(b => {
@@ -196,6 +221,7 @@
             });
         });
 
+        // 場館切換公告邏輯
         function switchVenue(venue) {
             currentVenue = venue;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -270,11 +296,11 @@
             document.getElementById('announce-content').classList.toggle('hidden');
         }
 
-        // 🌟 進入點餐邏輯（隱藏三館頁籤、執行週循環與動態截止計算）
+        // 🌟 核心改動：進入點餐畫面，執行隱藏頁籤、廠商專屬截止與週時間篩選
         document.getElementById('go-order-btn').addEventListener('click', function() {
             if (!selectedBrand) return;
             
-            // 1. 隱藏上方三館選單
+            // 1. 隱藏上方無意義之場館切換按鈕
             document.getElementById('venue-tabs-container').classList.add('hidden');
             
             document.getElementById('entrance-stage').classList.add('hidden');
@@ -285,22 +311,21 @@
             dateSelect.innerHTML = "";
 
             const now = new Date();
-            
-            // 2. 解析廠商專屬截止與週時間控制
             let isBrowseOnlyMode = true; 
+            
+            // 讀取該店專屬最後預點時間，預設 13:00
             let configCutoff = selectedBrand.cutoffTime || "13:00";
             let cutHour = parseInt(configCutoff.split(":")[0]) || 13;
             let cutMin = parseInt(configCutoff.split(":")[1]) || 0;
 
             if (selectedBrand.rawDates) {
-                // 讀取如 2026-06-19,2026-06-20
                 let dateStrings = selectedBrand.rawDates.split(",");
                 
                 dateStrings.forEach(dStr => {
                     let tDate = new Date(dStr.trim() + "T00:00:00");
                     if (isNaN(tDate.getTime())) return;
 
-                    // 判斷是否為同一年及同一週
+                    // 週循環防呆：計算當前手機時間所在的週一與週日區間
                     let startOfWeek = new Date(now);
                     startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
                     startOfWeek.setHours(0,0,0,0);
@@ -309,6 +334,7 @@
                     endOfWeek.setDate(startOfWeek.getDate() + 6);
                     endOfWeek.setHours(23,59,59,999);
 
+                    // 檢查 Excel 日期是否在當週單位的時間軸內
                     let isCurrentWeek = (tDate >= startOfWeek && tDate <= endOfWeek);
 
                     let opt = document.createElement('option');
@@ -316,15 +342,15 @@
                     opt.value = showText;
 
                     if (isCurrentWeek) {
-                        isBrowseOnlyMode = false; // 只要有當週日期，就開啟預訂填單模式
+                        isBrowseOnlyMode = false; // 只要能適應當週，就釋放點餐填寫權限
                         
-                        // 計算當日截止時間戳記
+                        // 計算當日截止的時間戳防護網
                         let deadline = new Date(tDate);
                         deadline.setHours(cutHour, cutMin, 0, 0);
 
                         if (now.getTime() >= deadline.getTime()) {
                             opt.disabled = true;
-                            opt.textContent = showText + ` (⚠️ 已超過預點時間)`;
+                            opt.textContent = showText + ` 已超過預點時間`;
                         } else {
                             opt.textContent = showText;
                         }
@@ -333,7 +359,7 @@
                 });
             }
 
-            // 3. 根據計算結果，切換模式 UI 顯示
+            // 控制純菜單瀏覽模式的 UI 顯示隱藏關閉
             const infoFields = document.getElementById('customer-info-fields');
             const submitBtn = document.getElementById('submit-order-btn');
             const browseBanner = document.getElementById('browse-only-banner');
@@ -351,7 +377,7 @@
                 browseBanner.classList.add('hidden');
             }
 
-            // 4. 菜單與 Options 加購項目渲染
+            // 線上菜單渲染
             const menuContainer = document.getElementById('menu_list_container');
             menuContainer.innerHTML = "";
             const brandMenu = dbData.menus[selectedBrand.id] || [];
@@ -360,7 +386,6 @@
                 let itemDiv = document.createElement('div');
                 itemDiv.className = "menu-item flex flex-col py-3";
                 
-                // 如果是純瀏覽模式，將下拉選單停用隱藏
                 let qtySelectorHtml = isBrowseOnlyMode ? '' : `
                     <select name="qty_${index}" onchange="toggleOptionsBox(${index}, this.value)" class="border border-gray-300 rounded p-1 text-xs bg-white">
                         <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
@@ -408,7 +433,7 @@
             }
         }
 
-        // 返回大廳時，重新亮出三館選單頁籤
+        // 返回首頁，重新還原顯示上方三館頁籤選單
         function backToEntrance() {
             document.getElementById('venue-tabs-container').classList.remove('hidden');
             document.getElementById('order-stage').classList.add('hidden');
@@ -416,14 +441,13 @@
             closeCustomModal();
         }
 
-        // 🌟 表單提交：改為先彈出確認視窗，再呼叫實體發送
+        // 🌟 核心邏輯：攔截送出，強制跳出彈出二次確認方塊，展示明細與告知條款
         document.getElementById('menuForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // 防呆確認是否有選中防灰日期
             const dateSelect = document.getElementById('pickup_date');
-            if(dateSelect.options[dateSelect.selectedIndex].disabled) {
-                alert("您選擇的日期已超過最後預點時間，無法送出訂單。");
+            if (dateSelect.options[dateSelect.selectedIndex].disabled) {
+                alert("您選擇的日期已超過該廠商的最後預點時間，無法送出！");
                 return;
             }
 
@@ -451,28 +475,27 @@
             });
 
             if (finalItems.length === 0) {
-                alert("❌ 您尚未選擇任何餐點品項！");
+                alert("❌ 您尚未選購任何餐點，請先選取數量。");
                 return;
             }
 
-            // 🌟 核心需求：跳出預覽確認視窗與告知文字
+            // 🌟 渲染高質感帶有告知文字的確認方塊
             const confirmBody = `
                 <div class="space-y-2 text-left bg-stone-50 p-3 rounded-xl border border-stone-100">
-                    <p class="text-stone-700"><strong>🏪 商店：</strong>${selectedBrand.name}</p>
-                    <p class="text-stone-700"><strong>👤 姓名：</strong>${document.getElementById('cust_name').value}</p>
-                    <p class="text-stone-700"><strong>📅 時間：</strong>${document.getElementById('pickup_date').value} ${document.getElementById('pickup_time').value}</p>
+                    <p class="text-stone-700"><strong>🏪 預訂店家：</strong>${selectedBrand.name}</p>
+                    <p class="text-stone-700"><strong>👤 取餐姓名：</strong>${document.getElementById('cust_name').value}</p>
+                    <p class="text-stone-700"><strong>📅 取餐時間：</strong>${document.getElementById('pickup_date').value} ${document.getElementById('pickup_time').value}</p>
                     <div class="border-t border-dashed my-2 pt-2">
-                        <p class="text-stone-800 font-bold mb-1">🛒 訂購餐點明細：</p>
-                        <p class="text-stone-600 font-medium whitespace-pre-line">${finalItems.join('\n')}</p>
+                        <p class="text-stone-800 font-bold mb-1">🛒 明細內容：</p>
+                        <p class="text-stone-600 font-medium whitespace-pre-line leading-relaxed">${finalItems.join('\n')}</p>
                     </div>
-                    <p class="text-base font-bold text-emerald-600 text-right">應付總額：$${total} 元</p>
+                    <p class="text-base font-bold text-emerald-600 text-right">應付金額：$${total} 元</p>
                 </div>
                 <p class="text-[11px] text-amber-700 font-bold leading-relaxed bg-amber-50 p-2.5 rounded-lg border border-amber-100 mt-3 text-center">
                     ⚠️ 告知文字：餐點一經送出，表示已完成訂購，如有訂單修改需求，請直接聯繫廠商，謝謝。
                 </p>
             `;
 
-            // 將打包好的訂單暫存在記憶體
             window.pendingOrder = {
                 brandId: selectedBrand.id, brand: selectedBrand.name,
                 name: document.getElementById('cust_name').value, phone: document.getElementById('cust_phone').value,
@@ -488,17 +511,15 @@
             openCustomModal("📋 請確認您的預訂內容", confirmBody, actionButtons);
         });
 
-        // 🌟 真正執行送出至後台
         function executeFinalSubmit() {
-            const submitBtn = document.getElementById('submit-order-btn');
-            openCustomModal("⏳ 訂單傳送中", "<p class='text-center py-4 text-stone-500 font-medium animate-pulse'>正在為您登記餐點，請勿關閉網頁...</p>", "");
+            openCustomModal("⏳ 訂單傳送中", "<p class='text-center py-4 text-stone-500 font-medium animate-pulse'>正在向綠洲總表登記席位，請勿關閉網頁...</p>", "");
 
             fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(window.pendingOrder) }).then(() => {
                 localStorage.setItem('nx_space_last_order', JSON.stringify(window.pendingOrder));
-                alert("🎉 預訂成功！已為您通知廠商備餐。");
+                alert("🎉 預訂成功！已同步通知廠商群組備餐。");
                 location.reload();
             }).catch(() => {
-                alert("網路不穩，傳送失敗，請重新送出！");
+                alert("發送失敗，請檢查網路連線後再試！");
                 closeCustomModal();
             });
         }
@@ -514,21 +535,21 @@
             document.getElementById('custom-modal').classList.add('hidden');
         }
 
-        // 🌟 點選清除鈕時告知顧客只是消除畫面，點餐仍已完成
+        // 🌟 核心邏輯：點選清除鈕時告知顧客「只是消除畫面，點餐仍已完成」
         function triggerClearHistoryAlert() {
             const bodyContent = `
                 <p class="font-extrabold text-red-600 text-sm bg-red-50 p-2.5 rounded-lg border border-red-100 text-center">
-                    ⚠️ 注意：此功能非取消訂單！
+                    ⚠️ 聲明：此功能非取消訂單！
                 </p>
                 <p class="text-stone-600 mt-2 text-center text-xs leading-relaxed">
-                    此動作僅消除您手機畫面上的快取紀錄。您的預訂單已成立，如需修改或取消餐點，請務必直接連繫店家廠商。
+                    此動作僅消除您手機網頁上的快取紀錄。您的預訂單早已即時傳送至系統庫存，點餐仍已完成。如需取消或修改，請務必直接聯繫店家廠商。
                 </p>
             `;
             const actionButtons = `
                 <button onclick="closeCustomModal()" class="px-4 py-2 text-stone-400 font-medium">取消</button>
                 <button onclick="executeClearHistory()" class="px-4 py-2 bg-stone-900 text-white rounded-lg">確認消除畫面</button>
             `;
-            openCustomModal("消除紀錄提醒", bodyContent, actionButtons);
+            openCustomModal("消除歷史紀錄提示", bodyContent, actionButtons);
         }
 
         function executeClearHistory() {
@@ -550,7 +571,7 @@
         }
 
         function copyCurrentUrl() {
-            navigator.clipboard.writeText(window.location.href).then(() => alert("網址複製成功！"));
+            navigator.clipboard.writeText(window.location.href).then(() => alert("網址複製成功！請至瀏覽器開啟。"));
         }
     </script>
 </body>
