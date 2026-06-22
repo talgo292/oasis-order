@@ -16,7 +16,7 @@
 
     <div id="browser-warning-banner" class="hidden mb-4 bg-amber-500 text-stone-900 text-xs font-bold p-3 rounded-xl shadow-sm border border-amber-600 animate-pulse">
         <p class="leading-relaxed">
-            ⚠️ 偵測到您目前使用 App 內建瀏覽器，可能導致菜單庫存未即時更新。<br>
+            ⚠️ 偵測到您目前使用 App 內建瀏覽器（如 Threads, FB, IG），可能導致菜單庫存未即時更新。<br>
             👉 <button onclick="copyCurrentUrl()" class="underline text-stone-900 font-black bg-white/40 px-1.5 py-0.5 rounded ml-1">點此複製網址</button> 至 Safari 或 Chrome 開啟以獲得最佳點餐體驗！
         </p>
     </div>
@@ -31,7 +31,7 @@
 
     <div id="loading-spinner" class="flex flex-col items-center justify-center py-20 space-y-3">
         <div class="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-xs text-gray-400 font-medium tracking-wide">同步大腦最新試算表庫存中...</p>
+        <p class="text-xs text-gray-400 font-medium tracking-wide">．．．資料同步中，請稍後．．．</p>
     </div>
 
     <div id="main-content" class="hidden">
@@ -85,7 +85,7 @@
             </div>
 
             <div class="mt-6 p-4 bg-white rounded-xl border border-stone-200 shadow-sm text-center">
-                <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎品牌進駐！餐車與場租合作</p>
+                <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎品牌｜活動展覽｜餐車｜策展活動合作</p>
                 <div class="flex justify-center space-x-3 text-xs">
                     <a href="https://lin.ee/VAwAg1I" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#06C755] text-white rounded-full font-medium shadow-sm flex items-center">LINE 客服</a>
                     <a href="https://www.facebook.com/nxspace254" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#1877F2] text-white rounded-full font-medium shadow-sm flex items-center">臉書專頁</a>
@@ -138,6 +138,20 @@
                             💡 每日預點最後時間為 13:00 止，如仍有單日點餐需求，歡迎洽詢廠商。
                         </p>
                     </div>
+
+                    <div id="dining-option-box" class="hidden">
+                        <label class="block text-gray-700 font-medium mb-1">用餐方式</label>
+                        <div class="flex space-x-6 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="radio" name="dining_style" value="外帶" checked class="w-4 h-4 text-black focus:ring-black border-gray-300">
+                                <span class="text-gray-800 font-medium">🛍️ 外帶</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="radio" name="dining_style" value="內用" class="w-4 h-4 text-black focus:ring-black border-gray-300">
+                                <span class="text-gray-800 font-medium">🍽️ 內用</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="border-t border-b border-gray-100 py-4 my-4">
@@ -147,7 +161,7 @@
 
                 <div id="note-field-box">
                     <label class="block text-gray-700 font-medium mb-1">備註說明 (選填)</label>
-                    <input type="text" id="order_note" placeholder="例如：少鹽｜不要洋蔥" class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
+                    <input type="text" id="order_note" placeholder="例如：不加辣｜不要洋蔥" class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
                 </div>
                 
                 <button type="submit" id="submit-order-btn" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium mt-6 hover:bg-emerald-700 transition">確認送出預訂單</button>
@@ -166,12 +180,10 @@
         const canvas = document.getElementById('brandCanvas');
         const ctx = canvas.getContext('2d');
 
-        // 🌟 核心升級：精準在線 App 內建瀏覽器環境偵測與自動轉跳
         function detectInAppBrowser() {
             const ua = navigator.userAgent || navigator.vendor || window.opera;
             const currentUrl = window.location.href;
 
-            // 1. 如果是 LINE，直接走專屬後門黑魔法，自動甩到手機原生瀏覽器開啟
             if (ua.indexOf("LINE") > -1) {
                 if (currentUrl.indexOf("openExternalBrowser=1") === -1) {
                     const separator = currentUrl.indexOf("?") === -1 ? "?" : "&";
@@ -180,7 +192,6 @@
                 }
             }
 
-            // 2. 萬能 App 內置沙盒防線 (包含 Threads, FB, IG, Twitter 等)
             const isInApp = (
                 ua.indexOf("Twitter") > -1 || 
                 ua.indexOf("FBAN") > -1 || 
@@ -190,7 +201,6 @@
                 (ua.indexOf("Mobile/") > -1 && ua.indexOf("Safari/") === -1)
             );
 
-            // 3. 只要判定被困在 App 監獄中，立刻自動亮出頂部提醒引導
             if (isInApp) {
                 const banner = document.getElementById('browser-warning-banner');
                 if (banner) banner.classList.remove('hidden');
@@ -201,9 +211,8 @@
             detectInAppBrowser();
             fetch(GAS_URL).then(res => res.json()).then(data => {
                 dbData = data;
-                switchVenue('oasis'); // 預設展示綠洲場
+                switchVenue('oasis'); 
                 
-                // 異步同步加載所有廠商的圓形圖片
                 const imgBase = dbData.main_config.github_img_base || "";
                 let loadedCount = 0;
                 dbData.brands.forEach(b => {
@@ -221,7 +230,6 @@
             });
         });
 
-        // 場館切換公告邏輯
         function switchVenue(venue) {
             currentVenue = venue;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -279,6 +287,7 @@
             else if (dbData.brands[1] && Math.sqrt((x-270)**2 + (y-70)**2) < 55) showBrandCard(dbData.brands[1]);
         });
 
+        // 點擊廠商圖示顯示介紹卡片
         function showBrandCard(brand) {
             selectedBrand = brand; drawCanvas();
             document.getElementById('brand-card').classList.remove('hidden');
@@ -288,21 +297,26 @@
             const fbLink = document.getElementById('link-fb');
             const igLink = document.getElementById('link-ig');
             fbLink.classList.add('hidden'); igLink.classList.add('hidden');
-            if (brand.fbUrl) { fbLink.href = brand.fbUrl; fbLink.classList.remove('hidden'); }
-            if (brand.igUrl) { igLink.href = brand.igUrl; igLink.classList.remove('hidden'); }
+            if (brand.fbUrl) { fbLink.href = brand.fbUrl; fbLink.className = "text-blue-600 block"; }
+            if (brand.igUrl) { igLink.href = brand.igUrl; igLink.className = "text-pink-600 block"; }
         }
 
         function toggleAnnouncement() {
             document.getElementById('announce-content').classList.toggle('hidden');
         }
 
-        // 🌟 核心改動：進入點餐畫面，執行隱藏頁籤、廠商專屬截止與週時間篩選
+        function backToEntrance() {
+            document.getElementById('venue-tabs-container').classList.remove('hidden');
+            document.getElementById('order-stage').classList.add('hidden');
+            document.getElementById('entrance-stage').classList.remove('hidden');
+            closeCustomModal();
+        }
+
+        // 點擊進入點餐
         document.getElementById('go-order-btn').addEventListener('click', function() {
             if (!selectedBrand) return;
             
-            // 1. 隱藏上方無意義之場館切換按鈕
             document.getElementById('venue-tabs-container').classList.add('hidden');
-            
             document.getElementById('entrance-stage').classList.add('hidden');
             document.getElementById('order-stage').classList.remove('hidden');
             document.getElementById('order-target').innerText = "訂購廠商：" + selectedBrand.name;
@@ -313,7 +327,6 @@
             const now = new Date();
             let isBrowseOnlyMode = true; 
             
-            // 讀取該店專屬最後預點時間，預設 13:00
             let configCutoff = selectedBrand.cutoffTime || "13:00";
             let cutHour = parseInt(configCutoff.split(":")[0]) || 13;
             let cutMin = parseInt(configCutoff.split(":")[1]) || 0;
@@ -325,7 +338,6 @@
                     let tDate = new Date(dStr.trim() + "T00:00:00");
                     if (isNaN(tDate.getTime())) return;
 
-                    // 週循環防呆：計算當前手機時間所在的週一與週日區間
                     let startOfWeek = new Date(now);
                     startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
                     startOfWeek.setHours(0,0,0,0);
@@ -334,7 +346,6 @@
                     endOfWeek.setDate(startOfWeek.getDate() + 6);
                     endOfWeek.setHours(23,59,59,999);
 
-                    // 檢查 Excel 日期是否在當週單位的時間軸內
                     let isCurrentWeek = (tDate >= startOfWeek && tDate <= endOfWeek);
 
                     let opt = document.createElement('option');
@@ -342,9 +353,8 @@
                     opt.value = showText;
 
                     if (isCurrentWeek) {
-                        isBrowseOnlyMode = false; // 只要能適應當週，就釋放點餐填寫權限
+                        isBrowseOnlyMode = false; 
                         
-                        // 計算當日截止的時間戳防護網
                         let deadline = new Date(tDate);
                         deadline.setHours(cutHour, cutMin, 0, 0);
 
@@ -359,7 +369,6 @@
                 });
             }
 
-            // 控制純菜單瀏覽模式的 UI 顯示隱藏關閉
             const infoFields = document.getElementById('customer-info-fields');
             const submitBtn = document.getElementById('submit-order-btn');
             const browseBanner = document.getElementById('browse-only-banner');
@@ -375,9 +384,17 @@
                 submitBtn.classList.remove('hidden');
                 noteBox.classList.remove('hidden');
                 browseBanner.classList.add('hidden');
+
+                // 🌟 核心需求修正：讀取 Excel 的 hasDining 欄位決定是否顯示內用/外帶
+                const diningBox = document.getElementById('dining-option-box');
+                let hasDiningVal = String(selectedBrand.hasDining).toUpperCase();
+                if (hasDiningVal === 'TRUE' || selectedBrand.hasDining === true) {
+                    diningBox.classList.remove('hidden');
+                } else {
+                    diningBox.classList.add('hidden');
+                }
             }
 
-            // 線上菜單渲染
             const menuContainer = document.getElementById('menu_list_container');
             menuContainer.innerHTML = "";
             const brandMenu = dbData.menus[selectedBrand.id] || [];
@@ -425,23 +442,7 @@
             });
         });
 
-        function toggleOptionsBox(index, qty) {
-            const optBox = document.getElementById(`opt_box_${index}`);
-            if (optBox) {
-                if (parseInt(qty) > 0) optBox.classList.remove('hidden');
-                else optBox.classList.add('hidden');
-            }
-        }
-
-        // 返回首頁，重新還原顯示上方三館頁籤選單
-        function backToEntrance() {
-            document.getElementById('venue-tabs-container').classList.remove('hidden');
-            document.getElementById('order-stage').classList.add('hidden');
-            document.getElementById('entrance-stage').classList.remove('hidden');
-            closeCustomModal();
-        }
-
-        // 🌟 核心邏輯：攔截送出，強制跳出彈出二次確認方塊，展示明細與告知條款
+        // 二次彈出確認方塊
         document.getElementById('menuForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -479,12 +480,20 @@
                 return;
             }
 
-            // 🌟 渲染高質感帶有告知文字的確認方塊
+            // 抓取當前填寫的用餐方式
+            let finalDiningStyle = "外帶";
+            let hasDiningVal = String(selectedBrand.hasDining).toUpperCase();
+            if (hasDiningVal === 'TRUE' || selectedBrand.hasDining === true) {
+                const checkedRadio = document.querySelector('input[name="dining_style"]:checked');
+                if (checkedRadio) finalDiningStyle = checkedRadio.value;
+            }
+
             const confirmBody = `
                 <div class="space-y-2 text-left bg-stone-50 p-3 rounded-xl border border-stone-100">
                     <p class="text-stone-700"><strong>🏪 預訂店家：</strong>${selectedBrand.name}</p>
                     <p class="text-stone-700"><strong>👤 取餐姓名：</strong>${document.getElementById('cust_name').value}</p>
                     <p class="text-stone-700"><strong>📅 取餐時間：</strong>${document.getElementById('pickup_date').value} ${document.getElementById('pickup_time').value}</p>
+                    <p class="text-stone-700"><strong>🍽️ 用餐方式：</strong><span class="text-amber-600 font-bold">${finalDiningStyle}</span></p>
                     <div class="border-t border-dashed my-2 pt-2">
                         <p class="text-stone-800 font-bold mb-1">🛒 明細內容：</p>
                         <p class="text-stone-600 font-medium whitespace-pre-line leading-relaxed">${finalItems.join('\n')}</p>
@@ -500,7 +509,7 @@
                 brandId: selectedBrand.id, brand: selectedBrand.name,
                 name: document.getElementById('cust_name').value, phone: document.getElementById('cust_phone').value,
                 date: document.getElementById('pickup_date').value, time: document.getElementById('pickup_time').value,
-                order_content: finalItems.join(' ｜ '), total: total, dining_option: "外帶",
+                order_content: finalItems.join(' ｜ '), total: total, dining_option: finalDiningStyle,
                 note: document.getElementById('order_note').value || "無", orderToken: "NX_" + Date.now(), itemsOrdered: itemsOrderedMap
             };
 
@@ -535,7 +544,6 @@
             document.getElementById('custom-modal').classList.add('hidden');
         }
 
-        // 🌟 核心邏輯：點選清除鈕時告知顧客「只是消除畫面，點餐仍已完成」
         function triggerClearHistoryAlert() {
             const bodyContent = `
                 <p class="font-extrabold text-red-600 text-sm bg-red-50 p-2.5 rounded-lg border border-red-100 text-center">
@@ -564,7 +572,7 @@
                 const order = JSON.parse(localData);
                 document.getElementById('history-card').classList.remove('hidden');
                 document.getElementById('hist-brand').innerText = order.brand;
-                document.getElementById('hist-time').innerText = `${order.date} ${order.time}`;
+                document.getElementById('hist-time').innerText = `${order.date} ${order.time} (${order.dining_option || '外帶'})`;
                 document.getElementById('hist-content').innerText = order.order_content;
                 document.getElementById('hist-total').innerText = order.total;
             }
