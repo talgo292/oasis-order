@@ -14,7 +14,6 @@
 </head>
 <body class="p-4 max-w-md mx-auto">
 
-    <!-- 萬用自訂彈出視窗 (Modal) -->
     <div id="custom-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl border border-gray-100 transform transition-all duration-200">
             <h3 id="modal-title" class="text-base font-bold text-gray-900 mb-2 tracking-wide"></h3>
@@ -23,13 +22,11 @@
         </div>
     </div>
 
-    <!-- 載入中動畫 -->
     <div id="loading-spinner" class="flex flex-col items-center justify-center py-20 space-y-3">
         <div class="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
         <p class="text-xs text-gray-400 font-medium tracking-wide">．．．資料同步中，請稍後．．．</p>
     </div>
 
-    <!-- 主要網頁內容區 -->
     <div id="main-content" class="hidden">
         <div class="text-center my-6">
             <h1 class="text-2xl font-bold tracking-wider text-gray-800">NX SPACE 馜享空間</h1>
@@ -131,7 +128,7 @@
                             </div>
                         </div>
                         <p id="cutoff-notice-msg" class="text-[11px] text-amber-600 font-medium mt-2 leading-relaxed bg-amber-50 p-2 rounded border border-amber-100">
-                            💡 每日預點最後時間為 13:00 止，如仍有單日點餐需求，歡迎洽詢廠商。
+                            💡 每日預點最後時間為 13:00 止，如仍有當日點餐需求，歡迎洽詢廠商。
                         </p>
                     </div>
 
@@ -166,6 +163,7 @@
     </div>
 
     <script>
+        // 🌟 請記得更換為您在管理後台新部署的 Web App 網址
         const GAS_URL = "https://script.google.com/macros/s/AKfycbw_JxFpE2Whdt9rRRR_L-ohF61yMuuRaw-VcfrE2Adxr9FzbS-9ajadyAJHLELSsUg/exec";
 
         let dbData = { main_config: {}, brands: [], menus: {} };
@@ -298,8 +296,11 @@
             document.getElementById('order-stage').classList.remove('hidden');
             document.getElementById('order-target').innerText = "訂購廠商：" + selectedBrand.name;
             
-            // 🎯 動態設定 Excel brands_config 傳進來的最晚下單時間提示
+            // 🎯 清洗時間字串，如果拿到 ISO 亂碼，強制還原為 "13:00"
             let configCutoff = selectedBrand.cutoffTime || "13:00";
+            if (configCutoff.indexOf("T") > -1) {
+                configCutoff = "13:00";
+            }
             document.getElementById('cutoff-notice-msg').innerHTML = `💡 每日預點最後時間為 ${configCutoff} 止，如仍有單日點餐需求，歡迎洽詢廠商。`;
 
             const dateSelect = document.getElementById('pickup_date');
@@ -338,11 +339,12 @@
                         let deadline = new Date(tDate);
                         deadline.setHours(cutHour, cutMin, 0, 0);
 
-                        // 🔍 這裡原逻辑有漏洞，若只要是當天且過期才標記
                         let isToday = (now.getFullYear() === tDate.getFullYear() && now.getMonth() === tDate.getMonth() && now.getDate() === tDate.getDate());
+                        
+                        // 🌟 核心防呆：只要是今天且過了截止時間，下拉選單直接加註並標記過期
                         if (isToday && now.getTime() >= deadline.getTime()) {
                             opt.setAttribute('data-expired', 'true');
-                            opt.textContent = showText + ` [超過當日預約時間]`;
+                            opt.textContent = showText + ` (超過點餐時間)`;
                         } else {
                             opt.textContent = showText;
                         }
@@ -376,13 +378,11 @@
                 }
             }
 
-            // 🚀 核心渲染菜單與即時防呆檢查
             renderMenuList();
-            // 🚀 執行初次日期變更的防呆連動檢查
             checkSelectedDateCutoff();
         });
 
-        // 🎯 新增：當切換日期時，即時判斷時間選單是否需要整組反灰
+        // 🎯 當切換日期時，即時阻擋反灰
         function checkSelectedDateCutoff() {
             const dateSelect = document.getElementById('pickup_date');
             const timeSelect = document.getElementById('pickup_time');
@@ -394,21 +394,19 @@
             const isExpired = selectedOpt.getAttribute('data-expired') === 'true';
 
             if (isExpired) {
-                // 1. 強制清空、停用時間下拉選單並加入文字提示
-                timeSelect.innerHTML = `<option value="" disabled selected>[超過當日預約時間]</option>`;
+                // 強制反灰時間選項
+                timeSelect.innerHTML = `<option value="" disabled selected>(超過當日預約時間)</option>`;
                 timeSelect.disabled = true;
                 timeSelect.className = "w-full border border-gray-200 p-2.5 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed focus:outline-none";
                 
-                // 2. 將提交預訂按鈕鎖死反灰
+                // 強制鎖死按鈕
                 submitBtn.disabled = true;
-                submitBtn.innerText = "❌ 超過當日預約時間（不開放預訂）";
+                submitBtn.innerText = "❌ 超過點餐時間（不開放預訂）";
                 submitBtn.className = "w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-medium mt-6 cursor-not-allowed";
             } else {
-                // 恢復正常選單
                 timeSelect.disabled = false;
                 timeSelect.className = "w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black";
                 
-                // 重新載入正確的時間選項
                 let currentVal = timeSelect.value;
                 timeSelect.innerHTML = `
                     <option value="" disabled ${!currentVal ? 'selected' : ''}>請選擇時間</option>
