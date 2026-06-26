@@ -163,7 +163,6 @@
     </div>
 
     <script>
-        // 🌟 請記得更換為您在管理後台新部署的 Web App 網址
         const GAS_URL = "https://script.google.com/macros/s/AKfycbw_JxFpE2Whdt9rRRR_L-ohF61yMuuRaw-VcfrE2Adxr9FzbS-9ajadyAJHLELSsUg/exec";
 
         let dbData = { main_config: {}, brands: [], menus: {} };
@@ -171,6 +170,9 @@
         let brandImages = {};
         let currentVenue = "oasis"; 
         
+        // 🌟 新增：用來動態儲存所有廠商座標的陣列
+        let brandPositions = [];
+
         const canvas = document.getElementById('brandCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -208,14 +210,30 @@
             document.getElementById('dynamic-announcement-box').innerText = notice;
         }
 
+        // 🌟 核心動態排版：依據總廠商數量動態計算圓心位置
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (dbData.brands[0]) drawBrandButton(dbData.brands[0], 90, 70);
-            if (dbData.brands[1]) drawBrandButton(dbData.brands[1], 270, 70);
+            brandPositions = []; // 清空舊座標
+            
+            const count = dbData.brands.length;
+            if (count === 0) return;
+
+            const radius = 45; // 稍微調整大小確保容納多廠商
+            const paddingY = 65; 
+
+            dbData.brands.forEach((brand, idx) => {
+                const segmentWidth = canvas.width / count;
+                const cx = (segmentWidth * idx) + (segmentWidth / 2);
+                
+                // 存入座標陣列
+                brandPositions.push({ id: brand.id, cx: cx, cy: paddingY, radius: radius, brandData: brand });
+                
+                // 畫出圓形大頭貼
+                drawDynamicBrandButton(brand, cx, paddingY, radius);
+            });
         }
 
-        function drawBrandButton(brand, cx, cy) {
-            const radius = 55;
+        function drawDynamicBrandButton(brand, cx, cy, radius) {
             const isSelected = selectedBrand?.id === brand.id;
             ctx.save();
             ctx.beginPath(); ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
@@ -234,23 +252,32 @@
 
             const textY = cy + radius + 12;
             ctx.fillStyle = isSelected ? '#111827' : '#374151';
-            ctx.font = 'bold 15px sans-serif';
+            ctx.font = 'bold 13px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             ctx.fillText(brand.name, cx, textY);
 
             if (brand.subName) {
-                ctx.font = '12px sans-serif';
+                ctx.font = '11px sans-serif';
                 ctx.fillStyle = '#6B7280';
                 ctx.fillText(brand.subName, cx, textY + 18);
             }
         }
 
+        // 🌟 核心動態點擊偵測：不再寫死座標，而是用迴圈逐一掃描陣列
         canvas.addEventListener('click', function(event) {
             const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left; const y = event.clientY - rect.top;
-            if (dbData.brands[0] && Math.sqrt((x-90)**2 + (y-70)**2) < 55) showBrandCard(dbData.brands[0]);
-            else if (dbData.brands[1] && Math.sqrt((x-270)**2 + (y-70)**2) < 55) showBrandCard(dbData.brands[1]);
+            const x = event.clientX - rect.left; 
+            const y = event.clientY - rect.top;
+            
+            for (let i = 0; i < brandPositions.length; i++) {
+                const pos = brandPositions[i];
+                const distance = Math.sqrt((x - pos.cx) ** 2 + (y - pos.cy) ** 2);
+                if (distance < pos.radius) {
+                    showBrandCard(pos.brandData);
+                    break;
+                }
+            }
         });
 
         function showBrandCard(brand) {
@@ -296,12 +323,11 @@
             document.getElementById('order-stage').classList.remove('hidden');
             document.getElementById('order-target').innerText = "訂購廠商：" + selectedBrand.name;
             
-            // 🎯 清洗時間字串，如果拿到 ISO 亂碼，強制還原為 "13:00"
             let configCutoff = selectedBrand.cutoffTime || "13:00";
             if (configCutoff.indexOf("T") > -1) {
                 configCutoff = "13:00";
             }
-            document.getElementById('cutoff-notice-msg').innerHTML = `💡 每日預點最後時間為 ${configCutoff} 止，如仍有單日點餐需求，歡迎洽詢廠商。`;
+            document.getElementById('cutoff-notice-msg').innerHTML = `💡 每日預點最後時間為 ${configCutoff} 止，如仍有當日點餐需求，歡迎洽詢廠商。`;
 
             const dateSelect = document.getElementById('pickup_date');
             dateSelect.innerHTML = "";
@@ -341,7 +367,6 @@
 
                         let isToday = (now.getFullYear() === tDate.getFullYear() && now.getMonth() === tDate.getMonth() && now.getDate() === tDate.getDate());
                         
-                        // 🌟 核心防呆：只要是今天且過了截止時間，下拉選單直接加註並標記過期
                         if (isToday && now.getTime() >= deadline.getTime()) {
                             opt.setAttribute('data-expired', 'true');
                             opt.textContent = showText + ` (超過點餐時間)`;
@@ -382,7 +407,6 @@
             checkSelectedDateCutoff();
         });
 
-        // 🎯 當切換日期時，即時阻擋反灰
         function checkSelectedDateCutoff() {
             const dateSelect = document.getElementById('pickup_date');
             const timeSelect = document.getElementById('pickup_time');
@@ -394,12 +418,10 @@
             const isExpired = selectedOpt.getAttribute('data-expired') === 'true';
 
             if (isExpired) {
-                // 強制反灰時間選項
                 timeSelect.innerHTML = `<option value="" disabled selected>(超過當日預約時間)</option>`;
                 timeSelect.disabled = true;
                 timeSelect.className = "w-full border border-gray-200 p-2.5 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed focus:outline-none";
                 
-                // 強制鎖死按鈕
                 submitBtn.disabled = true;
                 submitBtn.innerText = "❌ 超過點餐時間（不開放預訂）";
                 submitBtn.className = "w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-medium mt-6 cursor-not-allowed";
