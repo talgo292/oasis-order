@@ -127,9 +127,11 @@
                                 </select>
                             </div>
                         </div>
-                        <p id="cutoff-notice-msg" class="text-[11px] text-amber-600 font-medium mt-2.5 leading-relaxed bg-amber-50 p-2 rounded border border-amber-100">
-                            💡 每日預點最後時間為 13:00 止，如仍有當日點餐需求，歡迎洽詢廠商。
-                        </p>
+                        
+                        <div id="cutoff-notice-msg" class="text-[11px] text-amber-600 font-medium mt-2.5 leading-relaxed bg-amber-50 p-2 rounded border border-amber-100 space-y-1">
+                            <p>1. 💡 每日預點最後時間為 13:00 止，如仍有當日點餐需求，歡迎洽詢廠商。</p>
+                            <p>2. 📢 系統每次公布兩週行程，如有異動，請依廠商活動資訊為準。</p>
+                        </div>
                     </div>
 
                     <div id="dining-option-box" class="hidden">
@@ -169,7 +171,6 @@
         let selectedBrand = null;
         let brandImages = {};
         let currentVenue = "oasis"; 
-        
         let brandPositions = [];
 
         const canvas = document.getElementById('brandCanvas');
@@ -224,7 +225,6 @@
                 const cx = (segmentWidth * idx) + (segmentWidth / 2);
                 
                 brandPositions.push({ id: brand.id, cx: cx, cy: paddingY, radius: radius, brandData: brand });
-                
                 drawDynamicBrandButton(brand, cx, paddingY, radius);
             });
         }
@@ -240,7 +240,7 @@
             if (img && img.complete && img.naturalWidth > 0) {
                 ctx.drawImage(img, cx - radius, cy - radius, radius * 2, radius * 2);
                 ctx.fillStyle = isSelected ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.05)';
-                ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill(); // 🎯 修正：補上 ctx. 避免錯誤中斷
+                ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
             } else {
                 ctx.fillStyle = isSelected ? '#111827' : '#E5E7EB'; ctx.fill();
             }
@@ -322,7 +322,11 @@
             if (configCutoff.indexOf("T") > -1) {
                 configCutoff = "13:00";
             }
-            document.getElementById('cutoff-notice-msg').innerHTML = `💡 每日預點最後時間為 ${configCutoff} 止，如仍有當日點餐需求，歡迎洽詢廠商。`;
+            
+            document.getElementById('cutoff-notice-msg').innerHTML = `
+                <p>1. 💡 每日預點最後時間為 ${configCutoff} 止，如仍有當日點餐需求，歡迎洽詢廠商。</p>
+                <p>2. 📢 系統每次公布兩週行程，如有異動，請依廠商活動資訊為準。</p>
+            `;
 
             const dateSelect = document.getElementById('pickup_date');
             dateSelect.innerHTML = "";
@@ -333,45 +337,59 @@
             let cutHour = parseInt(configCutoff.split(":")[0]) || 13;
             let cutMin = parseInt(configCutoff.split(":")[1]) || 0;
 
+            // 計算兩週邊界（本週一 00:00 至 下週日 23:59）
             let startOfWeek = new Date(now);
             let daysToMonday = now.getDay() === 0 ? 6 : now.getDay() - 1;
             startOfWeek.setDate(now.getDate() - daysToMonday);
             startOfWeek.setHours(0, 0, 0, 0);
 
+            let endOfNextWeek = new Date(startOfWeek);
+            endOfNextWeek.setDate(startOfWeek.getDate() + 13);
+            endOfNextWeek.setHours(23, 59, 59, 999);
+
             let todayZero = new Date(now);
             todayZero.setHours(0, 0, 0, 0);
 
-            for (let i = 0; i < 14; i++) {
-                let tDate = new Date(startOfWeek);
-                tDate.setDate(startOfWeek.getDate() + i);
-
-                isBrowseOnlyMode = false; 
-
-                let opt = document.createElement('option');
-                let showText = `${tDate.getMonth()+1}/${tDate.getDate()} (${['日','一','二','三','四','五','六'][tDate.getDay()]})`;
+            // 🎯 核心修正：抓取 Excel 後台設定的 rawDates 進行精準判斷
+            if (selectedBrand.rawDates) {
+                let excelDateStrings = selectedBrand.rawDates.split(",");
                 
-                // 🎯 修正：將內部儲存值存為標準日期格式，後續判斷與核對更精準
-                let yyyy = tDate.getFullYear();
-                let mm = String(tDate.getMonth() + 1).padStart(2, '0');
-                let dd = String(tDate.getDate()).padStart(2, '0');
-                opt.value = `${yyyy}-${mm}-${dd}`;
+                excelDateStrings.forEach(dStr => {
+                    let tDate = new Date(dStr.trim() + "T00:00:00");
+                    if (isNaN(tDate.getTime())) return;
 
-                let deadline = new Date(tDate);
-                deadline.setHours(cutHour, cutMin, 0, 0);
+                    // 篩選一：必須在「當週一至下週日」這14天的範圍內，不符直接過濾
+                    if (tDate < startOfWeek || tDate > endOfNextWeek) {
+                        return;
+                    }
 
-                if (tDate < todayZero) {
-                    opt.setAttribute('data-expired', 'true');
-                    opt.textContent = showText;
-                    opt.disabled = true;
-                }
-                else if (tDate.getTime() === todayZero.getTime() && now.getTime() >= deadline.getTime()) {
-                    opt.setAttribute('data-expired', 'true');
-                    opt.textContent = showText + ` (超過最後點餐時間)`;
-                } 
-                else {
-                    opt.textContent = showText;
-                }
-                dateSelect.appendChild(opt);
+                    // 篩選二：如果是小於今天的過去日期，直接隱藏隱形，不可見
+                    if (tDate < todayZero) {
+                        return;
+                    }
+
+                    isBrowseOnlyMode = false; 
+
+                    let opt = document.createElement('option');
+                    let showText = `${tDate.getMonth()+1}/${tDate.getDate()}(${['日','一','二','三','四','五','六'][tDate.getDay()]})`;
+                    
+                    let yyyy = tDate.getFullYear();
+                    let mm = String(tDate.getMonth() + 1).padStart(2, '0');
+                    let dd = String(tDate.getDate()).padStart(2, '0');
+                    opt.value = `${yyyy}-${mm}-${dd}`;
+
+                    let deadline = new Date(tDate);
+                    deadline.setHours(cutHour, cutMin, 0, 0);
+
+                    // 篩選三：如果是今天且超過最後截止時間，顯示但標註超時反灰
+                    if (tDate.getTime() === todayZero.getTime() && now.getTime() >= deadline.getTime()) {
+                        opt.setAttribute('data-expired', 'true');
+                        opt.textContent = showText + `(超過最後點餐時間)`;
+                    } else {
+                        opt.textContent = showText;
+                    }
+                    dateSelect.appendChild(opt);
+                });
             }
 
             const infoFields = document.getElementById('customer-info-fields');
@@ -403,7 +421,6 @@
             checkSelectedDateCutoff();
         });
 
-        // 🎯 修正：讓確認送出時，依然抓取畫面上好辨識的日期名稱
         function checkSelectedDateCutoff() {
             const dateSelect = document.getElementById('pickup_date');
             const timeSelect = document.getElementById('pickup_time');
@@ -591,8 +608,7 @@
                 if (checkedRadio) finalDiningStyle = checkedRadio.value;
             }
 
-            // 🎯 修正：在確認對話框與傳送到後端時，依然回傳格式化好的日期文字（如：6/28）
-            let displayDateText = selectedOpt.textContent.split(" (")[0];
+            let displayDateText = selectedOpt.textContent.split("(")[0];
 
             const confirmBody = `
                 <div class="space-y-2 text-left bg-stone-50 p-3 rounded-xl border border-stone-100">
