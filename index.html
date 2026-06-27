@@ -127,7 +127,7 @@
                                 </select>
                             </div>
                         </div>
-                        <p id="cutoff-notice-msg" class="text-[11px] text-amber-600 font-medium mt-2 leading-relaxed bg-amber-50 p-2 rounded border border-amber-100">
+                        <p id="cutoff-notice-msg" class="text-[11px] text-amber-600 font-medium mt-2.5 leading-relaxed bg-amber-50 p-2 rounded border border-amber-100">
                             💡 每日預點最後時間為 13:00 止，如仍有當日點餐需求，歡迎洽詢廠商。
                         </p>
                     </div>
@@ -240,7 +240,7 @@
             if (img && img.complete && img.naturalWidth > 0) {
                 ctx.drawImage(img, cx - radius, cy - radius, radius * 2, radius * 2);
                 ctx.fillStyle = isSelected ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.05)';
-                ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); fill();
+                ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill(); // 🎯 修正：補上 ctx. 避免錯誤中斷
             } else {
                 ctx.fillStyle = isSelected ? '#111827' : '#E5E7EB'; ctx.fill();
             }
@@ -333,9 +333,7 @@
             let cutHour = parseInt(configCutoff.split(":")[0]) || 13;
             let cutMin = parseInt(configCutoff.split(":")[1]) || 0;
 
-            // 🌟 核心調整：改為動態顯示兩週範圍（從本週一到下週日，共 14 天）並精準防呆
             let startOfWeek = new Date(now);
-            // 找出本週一
             let daysToMonday = now.getDay() === 0 ? 6 : now.getDay() - 1;
             startOfWeek.setDate(now.getDate() - daysToMonday);
             startOfWeek.setHours(0, 0, 0, 0);
@@ -352,24 +350,24 @@
                 let opt = document.createElement('option');
                 let showText = `${tDate.getMonth()+1}/${tDate.getDate()} (${['日','一','二','三','四','五','六'][tDate.getDay()]})`;
                 
-                // 將格式存入 value (如：6/28)
-                opt.value = showText;
+                // 🎯 修正：將內部儲存值存為標準日期格式，後續判斷與核對更精準
+                let yyyy = tDate.getFullYear();
+                let mm = String(tDate.getMonth() + 1).padStart(2, '0');
+                let dd = String(tDate.getDate()).padStart(2, '0');
+                opt.value = `${yyyy}-${mm}-${dd}`;
 
                 let deadline = new Date(tDate);
                 deadline.setHours(cutHour, cutMin, 0, 0);
 
-                // 判斷 1：小於今天的過去日期 $\rightarrow$ 需求2：直接反灰，不加註文字
                 if (tDate < todayZero) {
                     opt.setAttribute('data-expired', 'true');
                     opt.textContent = showText;
                     opt.disabled = true;
                 }
-                // 判斷 2：等於今天的日期 $\rightarrow$ 需求1：超過時間反灰並加註
                 else if (tDate.getTime() === todayZero.getTime() && now.getTime() >= deadline.getTime()) {
                     opt.setAttribute('data-expired', 'true');
                     opt.textContent = showText + ` (超過最後點餐時間)`;
                 } 
-                // 判斷 3：其餘皆為可點餐正常日期
                 else {
                     opt.textContent = showText;
                 }
@@ -405,6 +403,7 @@
             checkSelectedDateCutoff();
         });
 
+        // 🎯 修正：讓確認送出時，依然抓取畫面上好辨識的日期名稱
         function checkSelectedDateCutoff() {
             const dateSelect = document.getElementById('pickup_date');
             const timeSelect = document.getElementById('pickup_time');
@@ -592,11 +591,14 @@
                 if (checkedRadio) finalDiningStyle = checkedRadio.value;
             }
 
+            // 🎯 修正：在確認對話框與傳送到後端時，依然回傳格式化好的日期文字（如：6/28）
+            let displayDateText = selectedOpt.textContent.split(" (")[0];
+
             const confirmBody = `
                 <div class="space-y-2 text-left bg-stone-50 p-3 rounded-xl border border-stone-100">
                     <p class="text-stone-700"><strong>🏪 預訂店家：</strong>${selectedBrand.name}</p>
                     <p class="text-stone-700"><strong>👤 取餐姓名：</strong>${document.getElementById('cust_name').value}</p>
-                    <p class="text-stone-700"><strong>📅 取餐時間：</strong>${document.getElementById('pickup_date').value} ${document.getElementById('pickup_time').value}</p>
+                    <p class="text-stone-700"><strong>📅 取餐時間：</strong>${displayDateText} ${document.getElementById('pickup_time').value}</p>
                     <p class="text-stone-700"><strong>🍽️ 用餐方式：</strong><span class="text-amber-600 font-bold">${finalDiningStyle}</span></p>
                     <div class="border-t border-dashed my-2 pt-2">
                         <p class="text-stone-800 font-bold mb-1">🛒 明細內容：</p>
@@ -612,7 +614,7 @@
             window.pendingOrder = {
                 brandId: selectedBrand.id, brand: selectedBrand.name,
                 name: document.getElementById('cust_name').value, phone: document.getElementById('cust_phone').value,
-                date: document.getElementById('pickup_date').value, time: document.getElementById('pickup_time').value,
+                date: displayDateText, time: document.getElementById('pickup_time').value,
                 order_content: finalItems.join(' ｜ '), total: total, dining_option: finalDiningStyle,
                 note: document.getElementById('order_note').value || "無", orderToken: "NX_" + Date.now(), itemsOrdered: itemsOrderedMap
             };
