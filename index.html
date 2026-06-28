@@ -39,6 +39,10 @@
         </div>
 
         <div id="entrance-stage" class="block">
+            <div id="home-line-banner" class="hidden mb-3 bg-red-50 border-red-200 text-red-800 p-2.5 rounded-lg border text-xs font-medium leading-relaxed">
+                ⚠️ <strong>偵測到您正使用 LINE 瀏覽器：</strong>為了確保您的「預訂紀錄」不遺失，建議點擊右下角 <span class="font-extrabold">「···」</span> 並選擇 <span class="underline">「使用預設瀏覽器開啟」</span>。
+            </div>
+
             <div class="mb-5 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                 <button onclick="toggleAnnouncement()" class="w-full flex justify-between items-center px-4 py-3 bg-stone-50 hover:bg-stone-100 transition text-left">
                     <span id="announcement-title" class="text-xs font-bold text-stone-700 tracking-wide flex items-center">最新活動資訊</span>
@@ -87,7 +91,7 @@
 
             <div class="mt-4 p-4 bg-gray-100 rounded-xl border border-gray-200 text-[10px] text-gray-500 leading-relaxed space-y-2">
                 <p>1. 本系統僅供 NX SPACE 綠洲場快閃策展活動預備點餐使用，系統所蒐集之顧客個人資料與消費紀錄僅得作為現場備餐及消費者聯繫相關用途。使用者於進行點餐時，即視為已詳閱、瞭解並完全同意本空間之各項場地使用規定與隱私保護聲明。</p>
-                <p>2. 本服務系統之架構、頁面設計及相關品牌資assets，均歸屬 NX SPACE 馜享空間及卡馜咖啡館所有，本公司保留本預點服務、活動內容調整與延期解釋之所有權利。</p>
+                <p>2. 本服務系統之架構、頁面設計及相關 brand 資assets，均歸屬 NX SPACE 馜享空間及卡馜咖啡館所有，本公司保留本預點服務、活動內容調整與延期解釋之所有權利。</p>
             </div>
         </div>
 
@@ -175,6 +179,13 @@
         const ctx = canvas.getContext('2d');
 
         window.addEventListener('DOMContentLoaded', () => {
+            // 🚀 【移至首頁偵測】：在網頁剛載入時立刻偵測 LINE 環境
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            if (ua.indexOf("Line") > -1) {
+                const homeLineBanner = document.getElementById('home-line-banner');
+                if (homeLineBanner) homeLineBanner.classList.remove('hidden');
+            }
+
             fetch(GAS_URL).then(res => res.json()).then(data => {
                 dbData = data;
                 switchVenue('oasis'); 
@@ -315,13 +326,11 @@
             return `${yyyy}-${mm}-${dd}`;
         }
 
-        // 🎯 【萬能終極防呆版】：精準解析各類 Excel 搞怪時間格式 (包括長英文、ISO、純文字)
         function parseToTimeString(timeInput) {
             const defaultStr = "13:00";
             if (!timeInput) return defaultStr;
             const str = String(timeInput).trim();
             
-            // 1. 優先嘗試將整串字串丟給 Date 物件解析 (能完美吃下長英文、ISO 等各種時區文字)
             try {
                 const parsedDate = new Date(str);
                 if (!isNaN(parsedDate.getTime())) {
@@ -331,10 +340,8 @@
                 }
             } catch(e) {}
             
-            // 2. 如果 Date 解析失敗，代表可能是乾淨的純文字 "16:00" 或 "19:30"
             if (str.indexOf(":") > -1) {
                 const parts = str.split(":");
-                // 確保精準抓到靠近冒號前後的純數字，排除干擾雜訊
                 let hourPart = parts[0].match(/\d+$/); 
                 let minPart = parts[1].match(/^\d+/);  
                 
@@ -356,26 +363,14 @@
             document.getElementById('order-target').innerText = "訂購廠商：" + selectedBrand.name;
 
             const promoBanner = document.getElementById('dynamic-promo-banner');
-            let bannerHtml = "";
-
-            // 🚀 【環境偵測應用】：若是在 LINE 內建瀏覽器開啟，優先壓入紅色警告橫幅，引導切換外部瀏覽器
-            const ua = navigator.userAgent || navigator.vendor || window.opera;
-            if (ua.indexOf("Line") > -1) {
-                bannerHtml += `
-                    <div class="bg-red-50 border-red-200 text-red-800 p-2.5 rounded-lg border font-medium mb-2">
-                        ⚠️ <strong>偵測到您正使用 LINE 瀏覽器：</strong>為了確保您的「預訂紀錄」不遺失，建議點擊右上角 <span class="font-extrabold">「···」</span> 並選擇 <span class="underline">「使用 Safari / Chrome 開啟」</span>。
-                    </div>
-                `;
-            }
-
-            // 壓入通用的暖黃色問券活動橫幅
-            bannerHtml += `
+            
+            // 💡 【移出環境警告】：點餐頁面僅保留乾淨的問券及促銷公告
+            let bannerHtml = `
                 <div class="bg-amber-50 border-amber-200 text-amber-800 p-2.5 rounded-lg border">
                     🎁 <strong>場地問券回饋：</strong>填寫問券並出示即享<strong>折價</strong>優惠！👉 <a href="https://forms.gle/zp2bKyBMKqrpc1fZ9" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold underline hover:text-blue-800">點此填寫問券</a>
                 </div>
             `;
 
-            // 若選取大麗士可麗餅，壓入鮮綠色專屬 CAMA 促銷公告
             if (selectedBrand.name.indexOf("大麗士") > -1) {
                 bannerHtml += `
                     <div class="bg-emerald-50 border-emerald-200 text-emerald-800 p-2.5 rounded-lg border mt-2">
