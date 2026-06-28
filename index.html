@@ -78,7 +78,7 @@
             </div>
 
             <div class="mt-6 p-4 bg-white rounded-xl border border-stone-200 shadow-sm text-center">
-                <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎品牌｜活動展覽｜餐車｜策展活動合作</p>
+                <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎 brand ｜活動展覽｜餐車｜策展活動合作</p>
                 <div class="flex justify-center space-x-3 text-xs">
                     <a href="https://lin.ee/VAwAg1I" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#06C755] text-white rounded-full font-medium shadow-sm flex items-center">LINE 客服</a>
                     <a href="https://www.facebook.com/nxspace254" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#1877F2] text-white rounded-full font-medium shadow-sm flex items-center">臉書專頁</a>
@@ -320,8 +320,11 @@
             document.getElementById('order-stage').classList.remove('hidden');
             document.getElementById('order-target').innerText = "訂購廠商：" + selectedBrand.name;
             
-            let configCutoff = selectedBrand.cutoffTime || "13:00";
+            let configCutoff = String(selectedBrand.cutoffTime || "13:00");
             if (configCutoff.indexOf("T") > -1) {
+                configCutoff = configCutoff.split("T")[1].substring(0, 5);
+            }
+            if (!configCutoff || configCutoff.length !== 5) {
                 configCutoff = "13:00";
             }
             
@@ -420,7 +423,6 @@
             checkSelectedDateCutoff();
         });
 
-        // 🎯 【新增核心函數】：根據選取厂商的 Excel 配置，動態精算並生成時間選單
         function checkSelectedDateCutoff() {
             const dateSelect = document.getElementById('pickup_date');
             const timeSelect = document.getElementById('pickup_time');
@@ -443,28 +445,33 @@
                 timeSelect.disabled = false;
                 timeSelect.className = "w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black";
                 
-                // 🚀 動態解析 Excel 設定的起訖與間隔時間
-                let startStr = selectedBrand.startTime || "17:30";
-                let endStr = selectedBrand.endTime || "19:30";
-                let intervalMin = parseInt(selectedBrand.timeInterval) || 30; // 預設 30 分鐘
+                let startStr = String(selectedBrand.startTime || "17:30");
+                let endStr = String(selectedBrand.endTime || "19:30");
+                let intervalMin = parseInt(selectedBrand.timeInterval) || 30;
 
-                // 如果 Excel 回傳資料包含完整時間戳記字串防呆
-                if (startStr.indexOf("T") > -1) startStr = "17:30";
-                if (endStr.indexOf("T") > -1) endStr = "19:30";
+                // 🚀 核心修復：精準切割 ISO 時間字串防呆，抽取出 HH:mm
+                if (startStr.indexOf("T") > -1) {
+                    startStr = startStr.split("T")[1].substring(0, 5);
+                }
+                if (endStr.indexOf("T") > -1) {
+                    endStr = endStr.split("T")[1].substring(0, 5);
+                }
+
+                // 再次驗證長度，不合規則帶入預設值
+                if (!startStr || startStr.length !== 5) startStr = "17:30";
+                if (!endStr || endStr.length !== 5) endStr = "19:30";
 
                 let startHour = parseInt(startStr.split(":")[0]) || 17;
                 let startMin = parseInt(startStr.split(":")[1]) || 30;
                 let endHour = parseInt(endStr.split(":")[0]) || 19;
                 let endMin = parseInt(endStr.split(":")[1]) || 30;
 
-                // 將起訖時間轉換為今日的分鐘總數，便於迴圈計算
                 let startTotalMinutes = startHour * 60 + startMin;
                 let endTotalMinutes = endHour * 60 + endMin;
 
                 let currentVal = timeSelect.value;
                 let timeOptionsHtml = `<option value="" disabled ${!currentVal ? 'selected' : ''}>請選擇時間</option>`;
 
-                // 利用迴圈動態算出每一個取餐時間點
                 for (let min = startTotalMinutes; min <= endTotalMinutes; min += intervalMin) {
                     let h = Math.floor(min / 60);
                     let m = min % 60;
@@ -619,7 +626,7 @@
             });
 
             if (finalItems.length === 0) {
-                alert("❌ 您尚未選購任何餐點，請先選取數量。");
+                alert("❌ 您尚未選購 any 餐點，請先選取數量。");
                 return;
             }
 
