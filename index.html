@@ -315,30 +315,32 @@
             return `${yyyy}-${mm}-${dd}`;
         }
 
-        // 🎯 輔助函式：將任何 Excel 回傳的時間格式文字精準轉換成純粹的 "HH:mm"
+        // 🎯 【萬能終極防呆版】：精準解析各類 Excel 搞怪時間格式 (包括長英文、ISO、純文字)
         function parseToTimeString(timeInput) {
             const defaultStr = "13:00";
             if (!timeInput) return defaultStr;
             const str = String(timeInput).trim();
             
-            // 如果是標準 ISO 時間格式 (包含 T 或是 '-' 的完整日期格式)
-            if (str.indexOf("T") > -1 || str.indexOf("-") > -1) {
-                try {
-                    const parsedDate = new Date(str);
-                    if (!isNaN(parsedDate.getTime())) {
-                        let h = String(parsedDate.getHours()).padStart(2, '0');
-                        let m = String(parsedDate.getMinutes()).padStart(2, '0');
-                        return `${h}:${m}`;
-                    }
-                } catch(e) {}
-            }
+            // 1. 優先嘗試將整串字串丟給 Date 物件解析 (能完美吃下長英文、ISO 等各種時區文字)
+            try {
+                const parsedDate = new Date(str);
+                if (!isNaN(parsedDate.getTime())) {
+                    let h = String(parsedDate.getHours()).padStart(2, '0');
+                    let m = String(parsedDate.getMinutes()).padStart(2, '0');
+                    return `${h}:${m}`;
+                }
+            } catch(e) {}
             
-            // 如果原本就是乾淨的 HH:mm (例如 16:00)
+            // 2. 如果 Date 解析失敗，代表可能是乾淨的純文字 "16:00" 或 "19:30"
             if (str.indexOf(":") > -1) {
                 const parts = str.split(":");
-                if (parts[0].length <= 2 && parts[1].length >= 2) {
-                    let h = String(parseInt(parts[0]) || 0).padStart(2, '0');
-                    let m = String(parseInt(parts[1]) || 0).padStart(2, '0');
+                // 確保精準抓到靠近冒號前後的純數字，排除干擾雜訊
+                let hourPart = parts[0].match(/\d+$/); 
+                let minPart = parts[1].match(/^\d+/);  
+                
+                if (hourPart && minPart) {
+                    let h = String(parseInt(hourPart[0], 10) || 0).padStart(2, '0');
+                    let m = String(parseInt(minPart[0], 10) || 0).padStart(2, '0');
                     return `${h}:${m}`;
                 }
             }
@@ -354,12 +356,26 @@
             document.getElementById('order-target').innerText = "訂購廠商：" + selectedBrand.name;
 
             const promoBanner = document.getElementById('dynamic-promo-banner');
-            let bannerHtml = `
+            let bannerHtml = "";
+
+            // 🚀 【環境偵測應用】：若是在 LINE 內建瀏覽器開啟，優先壓入紅色警告橫幅，引導切換外部瀏覽器
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            if (ua.indexOf("Line") > -1) {
+                bannerHtml += `
+                    <div class="bg-red-50 border-red-200 text-red-800 p-2.5 rounded-lg border font-medium mb-2">
+                        ⚠️ <strong>偵測到您正使用 LINE 瀏覽器：</strong>為了確保您的「預訂紀錄」不遺失，建議點擊右上角 <span class="font-extrabold">「···」</span> 並選擇 <span class="underline">「使用 Safari / Chrome 開啟」</span>。
+                    </div>
+                `;
+            }
+
+            // 壓入通用的暖黃色問券活動橫幅
+            bannerHtml += `
                 <div class="bg-amber-50 border-amber-200 text-amber-800 p-2.5 rounded-lg border">
                     🎁 <strong>場地問券回饋：</strong>填寫問券並出示即享<strong>折價</strong>優惠！👉 <a href="https://forms.gle/zp2bKyBMKqrpc1fZ9" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-bold underline hover:text-blue-800">點此填寫問券</a>
                 </div>
             `;
 
+            // 若選取大麗士可麗餅，壓入鮮綠色專屬 CAMA 促銷公告
             if (selectedBrand.name.indexOf("大麗士") > -1) {
                 bannerHtml += `
                     <div class="bg-emerald-50 border-emerald-200 text-emerald-800 p-2.5 rounded-lg border mt-2">
@@ -371,7 +387,6 @@
             promoBanner.innerHTML = bannerHtml;
             promoBanner.classList.remove('hidden');
             
-            // 🚀 防呆升級：使用 parseToTimeString 確保截止時間絕對正確
             let configCutoff = parseToTimeString(selectedBrand.cutoffTime);
             
             document.getElementById('cutoff-notice-msg').innerHTML = `
@@ -491,15 +506,14 @@
                 timeSelect.disabled = false;
                 timeSelect.className = "w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black";
                 
-                // 🚀 防呆升級：使用全新的時間字串提取機制，完美解決時區時差偏離
                 let startStr = parseToTimeString(selectedBrand.startTime);
                 let endStr = parseToTimeString(selectedBrand.endTime);
                 let intervalMin = parseInt(selectedBrand.timeInterval) || 30;
 
-                let startHour = parseInt(startStr.split(":")[0]);
-                let startMin = parseInt(startStr.split(":")[1]);
-                let endHour = parseInt(endStr.split(":")[0]);
-                let endMin = parseInt(endStr.split(":")[1]);
+                let startHour = parseInt(startStr.split(":")[0], 10);
+                let startMin = parseInt(startStr.split(":")[1], 10);
+                let endHour = parseInt(endStr.split(":")[0], 10);
+                let endMin = parseInt(endStr.split(":")[1], 10);
 
                 let startTotalMinutes = startHour * 60 + startMin;
                 let endTotalMinutes = endHour * 60 + endMin;
