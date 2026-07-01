@@ -186,6 +186,7 @@
     </div>
 
     <script>
+        // 💡 提示：覆蓋後請再次檢查此網址是否與 GAS 「網頁應用程式 URL」完全一致（注意大小寫錯字）
         const GAS_URL = "https://script.google.com/macros/s/AKfycbw_JxFpE2Whdt9rRRR_L-ohF61yMuuRaw-VcfrE2Adxr9FzbS-9ajadyAJHLELSsUg/exec";
 
         let dbData = { main_config: {}, brands: [], menus: {} };
@@ -203,7 +204,6 @@
             fetch(GAS_URL)
             .then(res => res.json())
             .then(data => {
-                // 🛡️ 雙重保險防崩潰防線：若後台回傳異常或格式不符，建立防空機制
                 if (!data || typeof data !== 'object') {
                     data = { main_config: {}, brands: [], menus: {} };
                 }
@@ -213,7 +213,6 @@
 
                 dbData = data;
                 switchVenue('oasis'); 
-                
                 renderHighDefBrandButtons();
 
                 document.getElementById('loading-spinner').classList.add('hidden');
@@ -221,8 +220,7 @@
                 checkOrderHistory();
             })
             .catch((err) => {
-                console.error("初始化資料失敗，強制開啟安全本地模式", err);
-                // 🛡️ 萬一網路中斷或後台掛點，強制網頁進入安全模式，避免無限轉圈圈
+                console.error("CORS 通道初始化攔截，啟用強固型本機降級渲染模式", err);
                 dbData = { main_config: {}, brands: [], menus: {} };
                 switchVenue('oasis');
                 document.getElementById('loading-spinner').classList.add('hidden');
@@ -238,7 +236,6 @@
                 tabBtn.classList.add('active');
             }
 
-            // 安全讀取設定，避免為空時報錯
             const configObj = dbData.main_config || {};
             const title = configObj[`activity_title_${venue}`] || "最新活動資訊";
             const notice = configObj[`notice_text_${venue}`] || "暫無公告資訊。";
