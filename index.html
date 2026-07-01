@@ -12,7 +12,7 @@
         .tab-btn.active { background-color: #111827; color: #ffffff; }
     </style>
 </head>
-<body class="p-4 max-w-md mx-auto">
+<body class="p-4 max-w-md mx-auto bg-cover bg-bottom bg-no-repeat bg-fixed bg-white" style="background-image: url('NX SPACE綠洲計畫底圖.jpg');">
 
     <div id="custom-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl border border-gray-100 transform transition-all duration-200">
@@ -29,7 +29,7 @@
 
     <div id="main-content" class="hidden">
         <div class="text-center my-6">
-            <h1 class="text-2xl font-bold tracking-wider text-gray-800">NX SPACE 馜享空間</h1>
+            <h1 class="text-2xl font-bold tracking-wider text-gray-900 bg-white/40 backdrop-blur-xs py-1.5 rounded-xl inline-block px-4">NX SPACE 馜享空間</h1>
             
             <div id="venue-tabs-container" class="flex justify-center space-x-2 mt-3">
                 <button onclick="switchVenue('tiehua')" id="tab-tiehua" class="tab-btn px-3 py-1 text-xs rounded-full bg-gray-200 text-gray-700 font-medium transition">鐵花館</button>
@@ -40,25 +40,25 @@
 
         <div id="entrance-stage" class="block">
             <div id="home-line-banner" class="hidden mb-4 bg-red-50 border-red-200 text-red-800 p-2.5 rounded-lg border text-xs font-medium leading-relaxed shadow-sm">
-                ⚠️ <strong>偵測到您正使用非預設的瀏覽器：</strong>為了確保您的「預訂紀錄」不遺失，建議點擊 <span class="font-extrabold">「···」</span> 並選擇 <span class="underline">「使用預設瀏覽器開啟」</span>。
+                ⚠️ <strong>偵測到您正使用社群 App 瀏覽器：</strong>為了確保您的「預訂紀錄」不遺失，建議點擊右上角 <span class="font-extrabold">「···」</span> 並選擇 <span class="underline">「使用 Safari / Chrome 開啟」</span>。
             </div>
 
-            <div class="mb-5 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-                <button onclick="toggleAnnouncement()" class="w-full flex justify-between items-center px-4 py-3 bg-stone-50 hover:bg-stone-100 transition text-left">
+            <div class="mb-5 bg-white/90 backdrop-blur-md border border-gray-100 rounded-xl shadow-md overflow-hidden">
+                <button onclick="toggleAnnouncement()" class="w-full flex justify-between items-center px-4 py-3 bg-stone-50/80 hover:bg-stone-100 transition text-left">
                     <span id="announcement-title" class="text-xs font-bold text-stone-700 tracking-wide flex items-center">最新活動資訊</span>
                     <span id="announce-arrow" class="text-xs text-stone-400 transition-transform duration-200">▼</span>
                 </button>
-                <div id="announce-content" class="p-4 border-t border-gray-100 text-xs text-stone-600 space-y-3 leading-relaxed bg-white">
+                <div id="announce-content" class="p-4 border-t border-gray-100 text-xs text-stone-600 space-y-3 leading-relaxed bg-white/50">
                     <div id="dynamic-announcement-box" class="whitespace-pre-line"></div>
                 </div>
             </div>
 
-            <p class="text-sm text-gray-600 mb-2 text-center">請點擊下方品牌圖示查看介紹：</p>
+            <p class="text-sm font-semibold text-gray-800 mb-2 text-center bg-white/60 backdrop-blur-xs py-0.5 rounded-full inline-block mx-auto max-w-xs block">請點擊下方品牌圖示查看介紹：</p>
             <canvas id="brandCanvas" width="360" height="190" class="mx-auto touch-none"></canvas>
             
-            <div id="brand-card" class="hidden mt-4 p-5 bg-white rounded-xl shadow-sm border border-gray-100">
+            <div id="brand-card" class="hidden mt-4 p-5 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-100">
                 <h2 id="card-title" class="text-xl font-bold text-gray-800"></h2>
-                <p id="card-desc" class="text-sm text-gray-600 my-3 leading-relaxed whitespace-pre-line"></p>
+                <p id="card-desc" class="text-sm text-gray-700 my-3 leading-relaxed whitespace-pre-line"></p>
                 <div id="social-links-box" class="flex space-x-4 mb-4 text-xs font-medium">
                     <a id="link-fb" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 hidden">🔵 官方 Facebook</a>
                     <a id="link-ig" href="#" target="_blank" rel="noopener noreferrer" class="text-pink-600 hidden">📸 官方 Instagram</a>
@@ -68,7 +68,7 @@
                 </button>
             </div>
 
-            <div id="history-card" class="hidden mt-4 p-5 bg-stone-950 text-stone-100 rounded-xl shadow-sm border border-stone-800">
+            <div id="history-card" class="hidden mt-4 p-5 bg-stone-950/95 backdrop-blur-md text-stone-100 rounded-xl shadow-md border border-stone-800">
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="text-sm font-bold tracking-wider text-amber-400">📋 您的最新預訂紀錄</h3>
                     <button onclick="triggerClearHistoryAlert()" class="text-[10px] text-stone-400 hover:text-stone-200 underline">清除紀錄</button>
@@ -81,7 +81,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 p-4 bg-white rounded-xl border border-stone-200 shadow-sm text-center">
+            <div class="mt-6 p-4 bg-white/90 backdrop-blur-md rounded-xl border border-stone-200 shadow-md text-center">
                 <p class="text-xs font-bold text-stone-800 mb-2 tracking-wide">🤝 歡迎 brand ｜活動展覽｜餐車｜策展活動合作</p>
                 <div class="flex justify-center space-x-3 text-xs">
                     <a href="https://lin.ee/VAwAg1I" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 bg-[#06C755] text-white rounded-full font-medium shadow-sm flex items-center">LINE 客服</a>
@@ -89,20 +89,20 @@
                 </div>
             </div>
 
-            <div class="mt-4 p-4 bg-gray-100 rounded-xl border border-gray-200 text-[10px] text-gray-500 leading-relaxed space-y-2">
+            <div class="mt-4 p-4 bg-gray-100/90 backdrop-blur-md rounded-xl border border-gray-200 text-[10px] text-gray-600 leading-relaxed space-y-2">
                 <p>1. 本系統僅供 NX SPACE 綠洲場快閃策展活動預備點餐使用，系統所蒐集之顧客個人資料與消費紀錄僅得作為現場備餐及消費者聯繫相關用途。使用者於進行點餐時，即視為已詳閱、瞭解並完全同意本空間之各項場地使用規定與隱私保護聲明。</p>
                 <p>2. 本服務系統之架構、頁面設計及相關 brand 資assets，均歸屬 NX SPACE 馜享空間及卡馜咖啡館所有，本公司保留本預點服務、活動內容調整與延期解釋之所有權利。</p>
             </div>
         </div>
 
-        <div id="order-stage" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div id="order-stage" class="hidden bg-white/95 backdrop-blur-md p-6 rounded-xl shadow-xl border border-gray-100">
             <button onclick="backToEntrance()" class="text-xs text-gray-400 mb-4 flex items-center">← 返回品牌選擇</button>
             
             <div id="dynamic-promo-banner" class="hidden mb-4 p-3 rounded-xl border text-xs leading-relaxed space-y-1.5"></div>
 
             <h2 id="order-target" class="text-lg font-bold text-gray-800 mb-2"></h2>
             
-            <div id="browse-only-banner" class="hidden bg-stone-100 border border-stone-300 text-stone-700 text-xs p-3 rounded-lg mb-5 leading-relaxed text-center font-medium">
+            <div id="browse-only-banner" class="hidden bg-stone-100/90 border border-stone-300 text-stone-700 text-xs p-3 rounded-lg mb-5 leading-relaxed text-center font-medium">
                 📢 系統提示：目前非本週點餐檔期，此介面僅供「瀏覽菜單」使用，暫不開放線上填單預訂。
             </div>
 
@@ -110,21 +110,21 @@
                 <div id="customer-info-fields" class="space-y-4">
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">取餐人姓名</label>
-                        <input type="text" id="cust_name" required class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
+                        <input type="text" id="cust_name" required class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black bg-white/80">
                     </div>
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">聯絡電話</label>
-                        <input type="tel" id="cust_phone" required class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
+                        <input type="tel" id="cust_phone" required class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black bg-white/80">
                     </div>
                     <div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-gray-700 font-medium mb-1">取餐日期</label>
-                                <select id="pickup_date" onchange="checkSelectedDateCutoff()" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black"></select>
+                                <select id="pickup_date" onchange="checkSelectedDateCutoff()" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white/80 focus:outline-none focus:border-black"></select>
                             </div>
                             <div>
                                 <label class="block text-gray-700 font-medium mb-1">取餐時間</label>
-                                <select id="pickup_time" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white focus:outline-none focus:border-black">
+                                <select id="pickup_time" required class="w-full border border-gray-200 p-2.5 rounded-lg bg-white/80 focus:outline-none focus:border-black">
                                     <option value="" disabled selected>請選擇時間</option>
                                 </select>
                             </div>
@@ -138,7 +138,7 @@
 
                     <div id="dining-option-box" class="hidden">
                         <label class="block text-gray-700 font-medium mb-1">用餐方式</label>
-                        <div class="flex space-x-6 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                        <div class="flex space-x-6 p-2 bg-gray-50/80 rounded-lg border border-gray-100">
                             <label class="flex items-center space-x-2 cursor-pointer">
                                 <input type="radio" name="dining_style" value="外帶" checked class="w-4 h-4 text-black focus:ring-black border-gray-300">
                                 <span class="text-gray-800 font-medium">🛍️ 外帶</span>
@@ -158,7 +158,7 @@
 
                 <div id="note-field-box">
                     <label class="block text-gray-700 font-medium mb-1">備註說明 (選填)</label>
-                    <input type="text" id="order_note" placeholder="example：不加辣｜不要洋蔥" class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black">
+                    <input type="text" id="order_note" placeholder="example：不加辣｜不要洋蔥" class="w-full border border-gray-200 p-2.5 rounded-lg focus:outline-none focus:border-black bg-white/80">
                 </div>
                 
                 <button type="submit" id="submit-order-btn" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium mt-6 hover:bg-emerald-700 transition">確認送出預訂單</button>
@@ -179,7 +179,7 @@
         const ctx = canvas.getContext('2d');
 
         window.addEventListener('DOMContentLoaded', () => {
-            // 🚀 【多平台萬能偵測】：一次吃下 LINE、Facebook (含 Messenger)、Threads 的內建瀏覽器
+            // 【多平台萬能偵測】：一次過濾 LINE、Facebook、Threads 的內建瀏覽器環境
             const ua = navigator.userAgent || navigator.vendor || window.opera;
             const isSocialBrowser = /Line|FBAN|FBAV|Threads/i.test(ua);
 
